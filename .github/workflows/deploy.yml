@@ -1,7 +1,7 @@
 # .github/workflows/deploy.yml
 # This workflow is for deploying the frontend (SPA) to GitHub Pages.
 
-name: Deploy Frontend to GitHub Pages # 워크플로우 이름 (프론트엔드 전용)
+name: Deploy Frontend & Backend # 워크플로우 이름
 
 on:
   push:
@@ -55,8 +55,13 @@ jobs:
           mkdir -p dist # 새 dist 폴더 생성
 
           # rsync를 사용하여 .git/, node_modules/, .env, .github/ 등 불필요한 파일을 제외하고 루트의 모든 파일과 폴더를 dist로 복사
-          # 이 저장소는 프론트엔드 전용이므로 'backend/'는 제외할 필요 없음 (원래 없을 것이므로).
+          # 'backend/'는 이 프론트엔드 전용 저장소에는 없어야 하지만, 혹시라도 있다면 제외합니다.
           rsync -av --exclude='.git/' --exclude='dist/' --exclude='node_modules/' --exclude='.env' --exclude='.github/' . dist/ || true
+
+          # [수정 시작] update-html.js 파일을 dist 폴더로 복사
+          # update-html.js 파일은 프로젝트 루트에 있다고 가정합니다.
+          cp update-html.js dist/
+          # [수정 끝]
 
           # 숨김 파일 중 .nojekyll을 제외하고 삭제 (GitHub Pages에서 필요할 수 있음)
           find dist -type f -name ".*" ! -name ".nojekyll" -delete || true
@@ -133,95 +138,21 @@ jobs:
           echo "=== CSS FILE MAPPING ==="
           cat css_mapping.txt || true
           echo "======================="
+
       - name: Update HTML files to use processed JS and CSS # HTML 파일 내 JS/CSS 참조 경로 업데이트
-        run: | # Node.js 스크립트를 YAML 파일 내부에 리터럴 블록 스타일로 포함
-          cat << 'EOF' > update_html_references.js
-          const fs = require('fs');
-          const path = require('path');
-                
-          const htmlFilesDir = './dist'; // HTML 파일들이 있는 디렉토리 (dist/)
-                
-          // 매핑 파일 읽기 헬퍼 함수
-          function readMappingFile(filePath) {
-              if (!fs.existsSync(filePath)) {
-                  return new Map();
-              }
-              const content = fs.readFileSync(filePath, 'utf8');
-              const lines = content.split('\n').filter(line => line.trim() !== '' && !line.startsWith('#'));
-              const mapping = new Map();
-              lines.forEach(line => {
-                  const [oldPath, newPath] = line.split(',');
-                  if (oldPath && newPath) {
-                      mapping.set(oldPath.trim(), newPath.trim());
-                  }
-              });
-              return mapping;
-          }
-                
-          const jsMapping = readMappingFile('js_mapping.txt');
-          const cssMapping = readMappingFile('css_mapping.txt');
-                
-          console.log('JS MAPPING:', jsMapping);
-          console.log('CSS MAPPING:', cssMapping);
-                
-          // HTML 파일들을 재귀적으로 찾기
-          function findHtmlFiles(dir) {
-              let htmlFiles = [];
-              const files = fs.readdirSync(dir);
-              for (const file of files) {
-                  const fullPath = path.join(dir, file);
-                  const stat = fs.statSync(fullPath);
-                  if (stat.isDirectory()) {
-                      htmlFiles = htmlFiles.concat(findHtmlFiles(fullPath));
-                  } else if (stat.isFile() && file.endsWith('.html')) {
-                      htmlFiles.push(fullPath);
-                  }
-              }
-              return htmlFiles;
-          }
-            
-          const htmlFiles = findHtmlFiles(htmlFilesDir);
-            
-          htmlFiles.forEach(htmlFilePath => {
-              console.log(`Updating references in: ${htmlFilePath}`);
-              let content = fs.readFileSync(htmlFilePath, 'utf8');
-            
-              jsMapping.forEach((newPath, oldPath) => {
-                  // [최종 수정] 정규식 패턴 수정: 모든 특수문자를 올바르게 이스케이프합니다.
-                  // Node.js String.prototype.replace()의 첫 번째 인자로 RegExp 객체를 직접 전달합니다.
-                  const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                  // src="/path" 형식의 절대 경로를 매칭합니다.
-                  // RegExp 생성자에 문자열 리터럴로 정규식을 넘기므로, `\\/`는 `\`가 아니라 `\` 자체를 의미하고, `/`는 `/` 입니다.
-                  // 따라서 `\\/`는 `\`가 됨.
-                  // `\/`가 아니라 `\\/`를 사용하는 이유는 `RegExp` 생성자가 문자열을 받기 때문.
-                  const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
-                  content = content.replace(regex, `src="${newPath}"`);
-                  console.log(`  JS: Replaced src ${oldPath} with ${newPath}`); // 디버깅 로그
-              });
-            
-              cssMapping.forEach((newPath, oldPath) => {
-                  // [최종 수정] CSS도 동일하게 정규식 수정.
-                  const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                  const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
-                  content = content.replace(regex, `href="${newPath}"`);
-                  console.log(`  CSS: Replaced href ${oldPath} with ${newPath}`); // 디버깅 로그
-              });
-            
-              // 파일 상단에 처리되었음을 알리는 주석 추가 (캐시 무효화용)
-              const timestamp = new Date().toLocaleString();
-              content = `<!-- Files processed: ${timestamp} -->\n` + content;
-            
-              fs.writeFileSync(htmlFilePath, content, 'utf8');
-              console.log(`Updated references in ${htmlFilePath}`);
-          EOF
-          # 생성된 Node.js 스크립트 실행 (./로 현재 디렉토리 명시)
+        # [수정 시작] working-directory를 ./dist/로 변경하고 node 스크립트 실행
+        run: |
+          # Node.js 스크립트 실행 (./로 현재 디렉토리 명시)
+          # update-html.js 파일은 Create dist directory and copy files 스텝에서 dist/로 복사되었습니다.
           node ./update_html_references.js
-          # [수정 끝]
 
           # 최종적으로 dist/index.html 파일의 내용을 확인하는 디버깅 스텝
           echo "===== Final dist/index.html content after updates ====="
           cat dist/index.html | head -n 30 # 상위 30줄만 출력하여 확인
           echo "======================================================="
+        working-directory: ./dist/ # 이 스텝의 작업 디렉토리를 dist/ 로 설정합니다.
+        # [수정 끝]
+
       - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
         run: |
           echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
