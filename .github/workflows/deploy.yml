@@ -187,20 +187,19 @@ jobs:
               let content = fs.readFileSync(htmlFilePath, 'utf8');
             
               jsMapping.forEach((newPath, oldPath) => {
-                  // 정규식 패턴: src="oldPath" 또는 src='oldPath'
-                  // 경로 문자열의 특수문자 (예: / . ?) 등을 이스케이프해야 합니다.
+                  // [수정 시작] 정규식의 닫는 대괄호 ']'와 백슬래시 '\'를 정확히 이스케이프.
+                  // 올바른 정규식은 /[.*+?^${}()|[$$$$/g 입니다.
                   const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                  // [수정 시작] \\/? -> \\/ 로 변경 (정확히 슬래시 하나만 매칭)
-                  // newPath 앞에는 이미 GITHUB_PAGES_BASE_PATH가 붙으므로, src="" 내부에 /를 넣지 않습니다.
+                  // Node.js 정규식에서 `\\/`는 리터럴 `/`를 의미.
+                  // `src="/path"` 형식의 절대 경로를 매칭합니다.
                   const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
                   content = content.replace(regex, `src="${newPath}"`);
                   console.log(`  JS: Replaced src ${oldPath} with ${newPath}`); // 디버깅 로그
               });
             
               cssMapping.forEach((newPath, oldPath) => {
-                  // 정규식 패턴: href="oldPath" 또는 href='oldPath'
+                  // [수정 시작] CSS도 동일하게 정규식 수정.
                   const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                  // [수정 시작] \\/? -> \\/ 로 변경 (정확히 슬래시 하나만 매칭)
                   const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
                   content = content.replace(regex, `href="${newPath}"`);
                   console.log(`  CSS: Replaced href ${oldPath} with ${newPath}`); // 디버깅 로그
