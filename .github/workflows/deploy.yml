@@ -136,84 +136,83 @@ jobs:
       - name: Update HTML files to use processed JS and CSS # HTML 파일 내 JS/CSS 참조 경로 업데이트
         run: | # Node.js 스크립트를 YAML 파일 내부에 리터럴 블록 스타일로 포함
           cat << 'EOF' > update_html_references.js
-            const fs = require('fs');
-            const path = require('path');
-
-            const htmlFilesDir = './dist'; // HTML 파일들이 있는 디렉토리 (dist/)
-
-            // 매핑 파일 읽기 헬퍼 함수
-            function readMappingFile(filePath) {
-                if (!fs.existsSync(filePath)) {
-                    return new Map();
-                }
-                const content = fs.readFileSync(filePath, 'utf8');
-                const lines = content.split('\n').filter(line => line.trim() !== '' && !line.startsWith('#'));
-                const mapping = new Map();
-                lines.forEach(line => {
-                    const [oldPath, newPath] = line.split(',');
-                    if (oldPath && newPath) {
-                        mapping.set(oldPath.trim(), newPath.trim());
-                    }
-                });
-                return mapping;
-            }
-
-            const jsMapping = readMappingFile('js_mapping.txt');
-            const cssMapping = readMappingFile('css_mapping.txt');
-
-            console.log('JS MAPPING:', jsMapping);
-            console.log('CSS MAPPING:', cssMapping);
-
-            // HTML 파일들을 재귀적으로 찾기
-            function findHtmlFiles(dir) {
-                let htmlFiles = [];
-                const files = fs.readdirSync(dir);
-                for (const file of files) {
-                    const fullPath = path.join(dir, file);
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isDirectory()) {
-                        htmlFiles = htmlFiles.concat(findHtmlFiles(fullPath));
-                    } else if (stat.isFile() && file.endsWith('.html')) {
-                        htmlFiles.push(fullPath);
-                    }
-                }
-                return htmlFiles;
-            }
-
-            const htmlFiles = findHtmlFiles(htmlFilesDir);
-
-            htmlFiles.forEach(htmlFilePath => {
-                console.log(`Updating references in: ${htmlFilePath}`);
-                let content = fs.readFileSync(htmlFilePath, 'utf8');
-
-                jsMapping.forEach((newPath, oldPath) => {
-                    // [수정 시작] 정규식의 닫는 대괄호 ']'와 슬래시 '/'를 추가.
-                    // 기존: /[.*+?^${}()|[$$$$/g
-                    // 수정: /[.*+?^${}()|[$$$$/g  (특수문자 ] 와 \ 를 추가 이스케이프)
-                    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                    // Node.js 정규식에서 \\/? 는 `\`가 이스케이프되고 `?`가 0 또는 1번 나타남을 의미
-                    // 즉, / 또는 /? (루트 슬래시가 있거나 없는 경우)를 매칭하는 것.
-                    const regex = new RegExp(`src=["']\\/?${escapedOldPath}["']`, 'g');
-                    // replace 메서드의 두 번째 인자가 문자열일 때 '$1'은 첫 번째 캡처 그룹을 참조합니다.
-                    content = content.replace(regex, `src="${newPath}"`);
-                    console.log(`  JS: Replaced src ${oldPath} with ${newPath}`); // 디버깅 로그
-                });
-
-                cssMapping.forEach((newPath, oldPath) => {
-                    // [수정 시작] CSS도 동일하게 정규식 수정.
-                    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                    const regex = new RegExp(`href=["']\\/?${escapedOldPath}["']`, 'g');
-                    content = content.replace(regex, `href="${newPath}"`);
-                    console.log(`  CSS: Replaced href ${oldPath} with ${newPath}`); // 디버깅 로그
-                });
-
-                // 파일 상단에 처리되었음을 알리는 주석 추가 (캐시 무효화용)
-                const timestamp = new Date().toLocaleString();
-                content = `<!-- Files processed: ${timestamp} -->\n` + content;
-
-                fs.writeFileSync(htmlFilePath, content, 'utf8');
-                console.log(`Updated references in ${htmlFilePath}`);
-            EOF
+          const fs = require('fs');
+          const path = require('path');
+                
+          const htmlFilesDir = './dist'; // HTML 파일들이 있는 디렉토리 (dist/)
+                
+          // 매핑 파일 읽기 헬퍼 함수
+          function readMappingFile(filePath) {
+              if (!fs.existsSync(filePath)) {
+                  return new Map();
+              }
+              const content = fs.readFileSync(filePath, 'utf8');
+              const lines = content.split('\n').filter(line => line.trim() !== '' && !line.startsWith('#'));
+              const mapping = new Map();
+              lines.forEach(line => {
+                  const [oldPath, newPath] = line.split(',');
+                  if (oldPath && newPath) {
+                      mapping.set(oldPath.trim(), newPath.trim());
+                  }
+              });
+              return mapping;
+          }
+                
+          const jsMapping = readMappingFile('js_mapping.txt');
+          const cssMapping = readMappingFile('css_mapping.txt');
+                
+          console.log('JS MAPPING:', jsMapping);
+          console.log('CSS MAPPING:', cssMapping);
+                
+          // HTML 파일들을 재귀적으로 찾기
+          function findHtmlFiles(dir) {
+              let htmlFiles = [];
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                  const fullPath = path.join(dir, file);
+                  const stat = fs.statSync(fullPath);
+                  if (stat.isDirectory()) {
+                      htmlFiles = htmlFiles.concat(findHtmlFiles(fullPath));
+                  } else if (stat.isFile() && file.endsWith('.html')) {
+                      htmlFiles.push(fullPath);
+                  }
+              }
+              return htmlFiles;
+          }
+            
+          const htmlFiles = findHtmlFiles(htmlFilesDir);
+            
+          htmlFiles.forEach(htmlFilePath => {
+              console.log(`Updating references in: ${htmlFilePath}`);
+              let content = fs.readFileSync(htmlFilePath, 'utf8');
+            
+              jsMapping.forEach((newPath, oldPath) => {
+                  // 정규식 패턴: src="oldPath" 또는 src='oldPath'
+                  // 경로 문자열의 특수문자 (예: / . ?) 등을 이스케이프해야 합니다.
+                  const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
+                  // [수정 시작] \\/? -> \\/ 로 변경 (정확히 슬래시 하나만 매칭)
+                  // newPath 앞에는 이미 GITHUB_PAGES_BASE_PATH가 붙으므로, src="" 내부에 /를 넣지 않습니다.
+                  const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
+                  content = content.replace(regex, `src="${newPath}"`);
+                  console.log(`  JS: Replaced src ${oldPath} with ${newPath}`); // 디버깅 로그
+              });
+            
+              cssMapping.forEach((newPath, oldPath) => {
+                  // 정규식 패턴: href="oldPath" 또는 href='oldPath'
+                  const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
+                  // [수정 시작] \\/? -> \\/ 로 변경 (정확히 슬래시 하나만 매칭)
+                  const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
+                  content = content.replace(regex, `href="${newPath}"`);
+                  console.log(`  CSS: Replaced href ${oldPath} with ${newPath}`); // 디버깅 로그
+              });
+            
+              // 파일 상단에 처리되었음을 알리는 주석 추가 (캐시 무효화용)
+              const timestamp = new Date().toLocaleString();
+              content = `<!-- Files processed: ${timestamp} -->\n` + content;
+            
+              fs.writeFileSync(htmlFilePath, content, 'utf8');
+              console.log(`Updated references in ${htmlFilePath}`);
+          EOF
           # 생성된 Node.js 스크립트 실행 (./로 현재 디렉토리 명시)
           node ./update_html_references.js
           # [수정 끝]
@@ -222,6 +221,7 @@ jobs:
           echo "===== Final dist/index.html content after updates ====="
           cat dist/index.html | head -n 30 # 상위 30줄만 출력하여 확인
           echo "======================================================="
+
       - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
         run: |
           echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
