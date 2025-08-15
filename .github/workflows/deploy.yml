@@ -1,7 +1,7 @@
 # .github/workflows/deploy.yml
 # This workflow is for deploying the frontend (SPA) to GitHub Pages.
 
-name: Deploy Frontend & Backend # 워크플로우 이름
+name: Deploy Frontend & Backend # 워크플로우 이름 (프론트엔드 전용)
 
 on:
   push:
@@ -18,215 +18,52 @@ jobs:
       pages: write # GitHub Pages 배포를 위한 권한
       id-token: write # GitHub Pages v3 액션의 OIDC 관련 (현재 JamesIves 액션에는 불필요할 수 있으나 안전을 위해 유지)
 
-    # 환경 변수 설정 (GCP 관련 환경 변수는 이제 필요 없음)
+    # 환경 변수 설정 (이제 필요 없음)
     # env:
     # 이 워크플로우는 GCP와 직접 통신하지 않으므로 GCP_PROJECT_ID, AR_LOCATION 등은 필요 없습니다.
     # 백엔드 배포 워크플로우에서 별도로 관리됩니다.
-    # 예시:
-    # GCP_PROJECT_ID: your-gcp-project-id
-    # AR_LOCATION: asia-northeast3
-    # AR_REPO_NAME: go-backend-repo
-    # CR_SERVICE_NAME: wind-app-backend
-    # CR_SERVICE_ACCOUNT: your-cloud-run-service-account@your-project-id.iam.gserviceaccount.com
 
     steps:
       - name: Checkout repository # GitHub 저장소 코드를 가상 머신으로 가져옵니다.
         uses: actions/checkout@v3
 
-      - name: Setup Node.js (for JS/CSS processing) # 프론트엔드 빌드 도구인 Node.js 설정
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16" # 여러분의 Node.js 버전에 맞춰 조정
-
-      - name: Install JavaScript/CSS tools # JS/CSS 난독화/압축 도구 설치
-        run: |
-          npm install -g javascript-obfuscator
-          npm install -g clean-css-cli
+      # [수정 시작] Node.js 설치 및 JS/CSS 도구 설치 스텝 제거
+      # - name: Setup Node.js (for JS/CSS processing)
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: "16"
+      # - name: Install JavaScript/CSS tools
+      #   run: |
+      #     npm install -g javascript-obfuscator
+      #     npm install -g clean-css-cli
+      # [수정 끝]
 
       # -------------------------------------------------------------
-      # 1. Frontend Processing (Obfuscation, Minification, Cache Busting)
-      #    이 섹션은 프론트엔드 파일을 처리하여 배포 준비를 합니다.
-      #    이 저장소는 프론트엔드만 포함하고 있다고 가정합니다.
+      # 1. Frontend Processing (원본 파일 복사)
+      #    이 섹션은 원본 프론트엔드 파일들을 dist 폴더로 복사합니다.
+      #    난독화, 압축, 경로 변경은 하지 않습니다.
       # -------------------------------------------------------------
-      - name: Create dist directory and copy files # 배포할 파일들을 모을 dist 폴더 생성 및 복사
+      - name: Create dist directory and copy raw files # dist 폴더 생성 및 원본 파일 복사
         run: |
           rm -rf dist # 기존 dist 폴더 삭제
           mkdir -p dist # 새 dist 폴더 생성
 
-          # [수정 시작] assets/ 폴더 전체를 dist/로 복사
-          cp index.html dist/ # index.html 복사
-          cp -r assets/ dist/ # <<-- assets/ 폴더 전체를 dist/ 로 복사
-          cp -r js/ dist/ # <<-- js/ 폴더 전체 복사
-          # [수정 끝]
+          # rsync를 사용하여 .git/, node_modules/, .env, .github/ 등 불필요한 파일을 제외하고 루트의 모든 파일과 폴더를 dist로 복사
+          # 'backend/'는 이 프론트엔드 전용 저장소에는 없어야 하지만, 혹시라도 있다면 제외합니다.
+          # 이 스텝에서 모든 필요한 파일들이 올바른 경로에 복사되어야 합니다.
+          rsync -av --exclude='.git/' --exclude='dist/' --exclude='node_modules/' --exclude='.env' --exclude='.github/' . dist/ || true
 
           # 숨김 파일 중 .nojekyll을 제외하고 삭제 (GitHub Pages에서 필요할 수 있음)
           find dist -type f -name ".*" ! -name ".nojekyll" -delete || true
 
-      - name: Process JS files (Obfuscate and rename) # JavaScript 파일 난독화 및 이름 변경
-        run: |
-          timestamp=$(date +%s) # 현재 타임스탬프를 가져와 파일명에 사용
-          echo "# JS file mapping" > js_mapping.txt # JS 파일 매핑 정보를 저장할 파일 생성
-
-          # dist/js/ 안에 있는 모든 JS 파일을 찾습니다.
-          find dist/js -type f -name "*.js" | while read file; do
-            echo "Processing JS: $file"
-            dir_path=$(dirname "$file")
-            base_name=$(basename "$file" .js)
-            new_file="${dir_path}/${base_name}.obf.${timestamp}.js" # 새 파일명 생성 (obf.타임스탬프.js)
-            
-            # javascript-obfuscator 도구로 난독화
-            javascript-obfuscator "$file" --output "$new_file" \
-              --compact true \
-              --control-flow-flattening true \
-              --dead-code-injection true \
-              --string-array true \
-              --self-defending true
-            
-            if [ -f "$new_file" ]; then # 난독화된 파일이 성공적으로 생성되면
-              orig_size=$(wc -c < "$file")
-              new_size=$(wc -c < "$new_file")
-              echo "  ✅ ${file}: ${orig_size} → ${new_size} bytes"
-              
-              orig_relative=${file#dist/} # dist/ 기준 상대 경로
-              new_relative=${new_file#dist/}
-              echo "$orig_relative,$new_relative" >> js_mapping.txt # 매핑 정보 기록
-              rm "$file" # 원본 JS 파일 삭제
-            else
-              echo "  ❌ Failed to obfuscate: $file"
-              exit 1 # 난독화 실패 시 워크플로우 중단
-            fi
-          done
-          echo "=== JS FILE MAPPING ==="
-          cat js_mapping.txt || true # 매핑 파일 내용 출력
-          echo "======================="
-
-      - name: Process CSS files (Minify and rename) # CSS 파일 압축 및 이름 변경
-        run: |
-          timestamp=$(date +%s)
-          echo "# CSS file mapping" > css_mapping.txt
-
-          # dist/assets/css/ 안에 있는 모든 CSS 파일을 찾습니다.
-          find dist/assets/css -type f -name "*.css" | while read file; do
-            echo "Processing CSS: $file"
-            dir_path=$(dirname "$file")
-            base_name=$(basename "$file" .css)
-            new_file="${dir_path}/${base_name}.min.${timestamp}.css" # 새 파일명 생성
-            
-            # cleancss 도구로 압축
-            cleancss -o "$new_file" "$file"
-            
-            if [ -f "$new_file" ]; then # 압축된 파일이 성공적으로 생성되면
-              orig_size=$(wc -c < "$file")
-              new_size=$(wc -c < "$new_file")
-              echo "  ✅ ${file}: ${orig_size} → ${new_size} bytes"
-              
-              orig_relative=${file#dist/}
-              new_relative=${new_file#dist/}
-              echo "$orig_relative,$new_relative" >> css_mapping.txt
-              rm "$file" # 원본 CSS 파일 삭제
-            else
-              echo "  ❌ Failed to minify: $file"
-              exit 1 # 압축 실패 시 워크플로우 중단
-            fi
-          done
-          echo "=== CSS FILE MAPPING ==="
-          cat css_mapping.txt || true
-          echo "======================="
-
-      - name: Update HTML files to use processed JS and CSS # HTML 파일 내 JS/CSS 참조 경로 업데이트
-        run: | # Node.js 스크립트를 YAML 파일 내부에 리터럴 블록 스타일로 포함
-          node -e '
-            const fs = require("fs");
-            const path = require("path");
-
-            // GitHub Pages의 기본 경로 (저장소 이름이 서브디렉토리로 붙음)
-            const GITHUB_PAGES_BASE_PATH = `/${process.env.GITHUB_REPOSITORY.split("/")[1]}/`;
-
-            const htmlFilesDir = "./dist"; // HTML 파일들이 있는 디렉토리 (dist/)
-
-            // 매핑 파일 읽기 헬퍼 함수
-            function readMappingFile(filePath) {
-                if (!fs.existsSync(filePath)) {
-                    return new Map();
-                }
-                const content = fs.readFileSync(filePath, "utf8");
-                const lines = content.split("\n").filter(line => line.trim() !== "" && !line.startsWith("#"));
-                const mapping = new Map();
-                lines.forEach(line => {
-                    const [oldPath, newPath] = line.split(",");
-                    if (oldPath && newPath) {
-                        mapping.set(oldPath.trim(), newPath.trim());
-                    }
-                });
-                return mapping;
-            }
-
-            const jsMapping = readMappingFile("js_mapping.txt");
-            const cssMapping = readMappingFile("css_mapping.txt");
-
-            console.log("JS MAPPING:", jsMapping);
-            console.log("CSS MAPPING:", cssMapping);
-
-            // HTML 파일들을 재귀적으로 찾기
-            function findHtmlFiles(dir) {
-                let htmlFiles = [];
-                const files = fs.readdirSync(dir);
-                for (const file of files) {
-                    const fullPath = path.join(dir, file);
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isDirectory()) {
-                        htmlFiles = htmlFiles.concat(findHtmlFiles(fullPath));
-                    } else if (stat.isFile() && file.endsWith(".html")) {
-                        htmlFiles.push(fullPath);
-                    }
-                }
-                return htmlFiles;
-            }
-
-            const htmlFiles = findHtmlFiles(htmlFilesDir);
-
-            htmlFiles.forEach(htmlFilePath => {
-                console.log(`Updating references in: ${htmlFilePath}`);
-                let content = fs.readFileSync(htmlFilePath, "utf8");
-
-                jsMapping.forEach((newPath, oldPath) => {
-                    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                    // src="/oldPath" 형태를 매칭하고 GITHUB_PAGES_BASE_PATH를 앞에 붙입니다.
-                    const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
-                    content = content.replace(regex, `src="${GITHUB_PAGES_BASE_PATH}${newPath}"`);
-                    console.log(`  JS: Replaced src /${oldPath} with ${GITHUB_PAGES_BASE_PATH}${newPath}`); // 디버깅 로그
-                });
-
-                cssMapping.forEach((newPath, oldPath) => {
-                    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                    const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
-                    content = content.replace(regex, `href="${GITHUB_PAGES_BASE_PATH}${newPath}"`);
-                    console.log(`  CSS: Replaced href /${oldPath} with ${GITHUB_PAGES_BASE_PATH}${newPath}`); // 디버깅 로그
-                });
-
-                // [추가] 이미지 경로 업데이트 로직 (주요 변경!)
-                // HTML에 하드코딩된 이미지 경로 (예: <img src="/assets/img/BHY.png">) 처리
-                // 이 정규식은 `/assets/img/` 다음에 오는 모든 경로를 캡처하고 GITHUB_PAGES_BASE_PATH를 앞에 붙입니다.
-                // $1은 "assets/img/" 같은 상위 폴더를 캡처하고, $2는 그 하위 이미지 경로를 캡처합니다.
-                content = content.replace(new RegExp(`(src|href)=["']\\/(assets\\/img)\\/([\\w\\/\\.\\-]+)["']`, 'g'), `$1="${GITHUB_PAGES_BASE_PATH}$2/$3"`);
-                console.log("  Images: Updated /assets/img/ paths."); // 디버깅 로그
-                // [추가 끝]
-
-                // 파일 상단에 처리되었음을 알리는 주석 추가 (캐시 무효화용)
-                const timestamp = new Date().toLocaleString();
-                content = `<!-- Files processed: ${timestamp} -->\n` + content;
-
-                fs.writeFileSync(htmlFilePath, content, 'utf8');
-                console.log(`Updated references in ${htmlFilePath}`);
-            });
-          '
-          # GITHUB_REPOSITORY 환경 변수를 Node.js 스크립트로 전달
-          env:
-            GITHUB_REPOSITORY: ${{ github.repository }} 
-
-          echo "===== Final dist/index.html content after updates ====="
-          cat dist/index.html | head -n 30 # 상위 30줄만 출력하여 확인
-          echo "======================================================="
+      # [수정 시작] 난독화/압축/HTML 업데이트 관련 스텝들 모두 제거
+      # - name: Process JS files (Obfuscate and rename)
+      #   run: | ... (생략) ...
+      # - name: Process CSS files (Minify and rename)
+      #   run: | ... (생략) ...
+      # - name: Update HTML files to use processed JS and CSS
+      #   run: | ... (생략) ...
+      # [수정 끝]
 
       - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
         run: |
@@ -234,13 +71,13 @@ jobs:
 
       # -------------------------------------------------------------
       # 2. Deploy Frontend to GitHub Pages
-      #    처리된 프론트엔드 파일들을 GitHub Pages로 배포합니다.
+      #    원본 프론트엔드 파일들을 GitHub Pages로 배포합니다.
       # -------------------------------------------------------------
       - name: Deploy Frontend to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # 배포할 브랜치 (gh-pages 브랜치가 없으면 자동으로 생성됨)
-          folder: dist # 배포할 소스 코드 폴더 (처리된 파일들이 있는 곳)
+          folder: dist # 배포할 소스 코드 폴더 (이제 원본 파일이 들어있음)
           clean: true # gh-pages 브랜치의 이전 내용을 정리하고 배포
           token: ${{ secrets.GITHUB_TOKEN }} # GitHub Pages 배포 권한을 가진 토큰 (GitHub Actions가 자동으로 제공)
 
@@ -248,3 +85,24 @@ jobs:
       # -------------------------------------------------------------
       # 백엔드 배포 관련 스텝들은 모두 제거됨 (프론트엔드 전용 워크플로우)
       # -------------------------------------------------------------
+      # - name: Setup Go (for backend build)
+      #   uses: actions/setup-go@v5
+      #   with:
+      #     go-version: "1.23"
+      # - name: Authenticate to Google Cloud (using JSON Key)
+      #   id: "auth"
+      #   uses: "google-github-actions/auth@v2"
+      #   with:
+      #     project_id: ${{ env.GCP_PROJECT_ID }}
+      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+      # - name: Set up Cloud SDK (gcloud CLI)
+      #   uses: google-github-actions/setup-gcloud@v2
+      # - name: Build and Push Docker image to Artifact Registry
+      #   run: |
+      #     gcloud auth configure-docker ...
+      #     docker build ...
+      #     docker push ...
+      #   working-directory: ./backend/
+      # - name: Deploy to Cloud Run
+      #   run: |
+      #     gcloud run deploy ...
