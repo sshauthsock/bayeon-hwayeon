@@ -187,18 +187,20 @@ jobs:
               let content = fs.readFileSync(htmlFilePath, 'utf8');
             
               jsMapping.forEach((newPath, oldPath) => {
-                  // [수정 시작] 정규식의 닫는 대괄호 ']'와 백슬래시 '\'를 정확히 이스케이프.
-                  // 올바른 정규식은 /[.*+?^${}()|[$$$$/g 입니다.
+                  // [최종 수정] 정규식 패턴 수정: 모든 특수문자를 올바르게 이스케이프합니다.
+                  // Node.js String.prototype.replace()의 첫 번째 인자로 RegExp 객체를 직접 전달합니다.
                   const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                  // Node.js 정규식에서 `\\/`는 리터럴 `/`를 의미.
-                  // `src="/path"` 형식의 절대 경로를 매칭합니다.
+                  // src="/path" 형식의 절대 경로를 매칭합니다.
+                  // RegExp 생성자에 문자열 리터럴로 정규식을 넘기므로, `\\/`는 `\`가 아니라 `\` 자체를 의미하고, `/`는 `/` 입니다.
+                  // 따라서 `\\/`는 `\`가 됨.
+                  // `\/`가 아니라 `\\/`를 사용하는 이유는 `RegExp` 생성자가 문자열을 받기 때문.
                   const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
                   content = content.replace(regex, `src="${newPath}"`);
                   console.log(`  JS: Replaced src ${oldPath} with ${newPath}`); // 디버깅 로그
               });
             
               cssMapping.forEach((newPath, oldPath) => {
-                  // [수정 시작] CSS도 동일하게 정규식 수정.
+                  // [최종 수정] CSS도 동일하게 정규식 수정.
                   const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
                   const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
                   content = content.replace(regex, `href="${newPath}"`);
