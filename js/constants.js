@@ -1,11 +1,11 @@
 // 세력 아이콘 경로 (모든 모듈에서 공통으로 사용)
 export const FACTION_ICONS = {
-  결의: "/assets/img/bond/결의.jpg",
-  고요: "/assets/img/bond/고요.jpg",
-  의지: "/assets/img/bond/의지.jpg",
-  침착: "/assets/img/bond/침착.jpg",
-  냉정: "/assets/img/bond/냉정.jpg",
-  활력: "/assets/img/bond/활력.jpg",
+  결의: "assets/img/bond/결의.jpg",
+  고요: "assets/img/bond/고요.jpg",
+  의지: "assets/img/bond/의지.jpg",
+  침착: "assets/img/bond/침착.jpg",
+  냉정: "assets/img/bond/냉정.jpg",
+  활력: "assets/img/bond/활력.jpg",
 };
 
 // 스탯 한글 이름 맵 (모든 모듈에서 공통으로 사용)
