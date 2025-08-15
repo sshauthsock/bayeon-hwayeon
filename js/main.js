@@ -103,7 +103,6 @@ mainTabs.addEventListener("click", (e) => {
  * 애플리케이션 초기화 (최초 데이터 로드 및 초기 페이지 렌더링)
  */
 async function initializeApp() {
-  // 앱 시작 시 전체 화면 로딩 인디케이터 표시 (app-container에 오버레이)
   showLoading(
     appContainer,
     "초기 데이터 로딩 중",
@@ -111,18 +110,28 @@ async function initializeApp() {
   );
 
   try {
-    // 모든 환수 데이터 미리 로드 (앱 전체에서 사용될 수 있음)
-    const allSpirits = await api.fetchAllSpirits();
-    setAllSpirits(allSpirits); // 전역 상태에 저장
+    const allSpiritsRaw = await api.fetchAllSpirits();
 
-    // 초기 라우트 실행 (기본적으로 '환수 정보' 탭)
+    // --- 여기부터 추가/수정될 코드 ---
+    // Firestore에서 가져온 이미지 경로를 GitHub Pages 경로에 맞게 변환
+    const allSpiritsTransformed = allSpiritsRaw.map((spirit) => {
+      // image 경로가 'images/'로 시작하는 경우 'assets/img/'로 변경
+      // 정규식 '^images\/'는 문자열 시작 부분의 'images/'만 변경하도록 합니다.
+      const transformedImage = spirit.image.replace(/^images\//, "assets/img/");
+      return {
+        ...spirit,
+        image: transformedImage,
+      };
+    });
+    setAllSpirits(allSpiritsTransformed); // 변환된 데이터를 전역 상태에 저장
+    // --- 여기까지 추가/수정될 코드 ---
+
     await route();
   } catch (error) {
     console.error("애플리케이션 초기화 실패:", error);
-    // 데이터 로드 실패 시 사용자에게 오류 메시지 표시
     appContainer.innerHTML = `<p class="error-message">애플리케이션 초기화 실패: 데이터를 불러오는 데 실패했습니다. (${error.message})</p>`;
   } finally {
-    hideLoading(); // 초기 로딩 인디케이터 숨김
+    hideLoading();
   }
 }
 
