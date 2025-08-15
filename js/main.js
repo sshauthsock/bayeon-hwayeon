@@ -15,10 +15,66 @@ const appContainer = document.getElementById("app-container");
 const mainTabs = document.getElementById("mainTabs");
 let currentPageModule = null; // 현재 활성화된 페이지 모듈을 추적
 
+// [Help Tooltip 관련 DOM 요소 참조 및 이벤트 리스너 추가 시작]
+const helpBtn = document.getElementById("helpBtn");
+const helpTooltip = document.getElementById("helpTooltip");
+const closeHelpBtn = document.getElementById("closeHelp");
+const currentHelpTitle = document.getElementById("currentHelpTitle");
+const pageSpecificHelpContent = document.getElementById(
+  "pageSpecificHelpContent"
+);
+// REMOVED: const generalHelpSection = document.getElementById("generalHelpSection"); // '환수 표시 안내' 섹션
+
+// 도움말 버튼 클릭 시 토글 (모달 표시/숨김)
+if (
+  helpBtn &&
+  helpTooltip &&
+  closeHelpBtn &&
+  currentHelpTitle &&
+  pageSpecificHelpContent
+) {
+  helpBtn.addEventListener("click", (event) => {
+    event.stopPropagation(); // 버튼 클릭이 문서 클릭 이벤트로 전파되는 것 방지
+    helpTooltip.style.display =
+      helpTooltip.style.display === "block" ? "none" : "block";
+    // 모달이 열릴 때 배경 스크롤 방지, 닫힐 때 복원
+    document.body.style.overflow =
+      helpTooltip.style.display === "block" ? "hidden" : "auto";
+  });
+
+  // 닫기 버튼 클릭 시 숨김
+  closeHelpBtn.addEventListener("click", (event) => {
+    event.stopPropagation(); // 버튼 클릭이 문서 클릭 이벤트로 전파되는 것 방지
+    helpTooltip.style.display = "none";
+    document.body.style.overflow = "auto"; // 배경 스크롤 복원
+  });
+
+  // 모달 외부 클릭 시 닫기
+  document.addEventListener("click", (event) => {
+    if (
+      !helpBtn.contains(event.target) &&
+      !helpTooltip.contains(event.target)
+    ) {
+      if (helpTooltip.style.display === "block") {
+        helpTooltip.style.display = "none";
+        document.body.style.overflow = "auto"; // 배경 스크롤 복원
+      }
+    }
+  });
+} else {
+  console.error(
+    "Help button or related tooltip elements not found in DOM for initialization."
+  );
+}
+// [Help Tooltip 관련 DOM 요소 참조 및 이벤트 리스너 추가 종료]
+
+/**
+ * 라우팅을 처리하고 새 페이지를 로드 및 렌더링합니다.
+ */
 async function route() {
   const activeTab = mainTabs.querySelector(".tab.active");
-  // 활성화된 탭이 없으면 기본 페이지(spiritInfo)로 설정
   const pageName = activeTab ? activeTab.dataset.page : "spiritInfo";
+  const pageTitle = activeTab ? activeTab.textContent : "환수 정보";
 
   // 이전 페이지 모듈이 있다면 정리 함수 실행
   if (currentPageModule?.cleanup) {
@@ -54,22 +110,36 @@ async function route() {
       await pageModule.init(appContainer);
       console.log(`[Router] Initialized page: ${pageName}`);
 
-      // [수정 시작] GA4 페이지 뷰 이벤트 수동 전송
-      // gtag 함수는 GA4 스크립트가 index.html에서 로드되면 전역적으로 사용 가능합니다.
+      // [Help Tooltip Content 업데이트 시작]
+      // 현재 페이지의 도움말 제목 설정
+      if (currentHelpTitle && pageSpecificHelpContent) {
+        // 안전하게 요소 존재 확인
+        currentHelpTitle.textContent = `${pageTitle} 도움말`;
+
+        if (pageModule.getHelpContentHTML) {
+          pageSpecificHelpContent.innerHTML = pageModule.getHelpContentHTML();
+        } else {
+          pageSpecificHelpContent.innerHTML = `<div class="content-block"><p class="text-center text-light mt-md">이 페이지에 대한 특정 도움말은 없습니다.</p></div>`;
+        }
+        // REMOVED: generalHelpSection.style.display 로직 제거 (이제 이 섹션이 없음)
+      } else {
+        console.error(
+          "Help tooltip specific content elements not found for update within route()."
+        );
+      }
+      // [Help Tooltip Content 업데이트 종료]
+
+      // [GA4 페이지 뷰 이벤트 수동 전송 및 웹사이트 타이틀 동적 변경]
       if (typeof gtag === "function") {
-        const pagePath = `/${pageName}`; // 예시: /spiritInfo, /bondCalculator
-        // activeTab이 null일 수도 있으므로, pageTitle도 기본값 설정 (홈)
-        const pageTitle = activeTab ? activeTab.textContent : "홈"; // 탭 메뉴 텍스트를 페이지 제목으로 사용
+        const pagePath = `/bayeon-hwayeon/${pageName}`;
+        document.title = `바연화연 | ${pageTitle}`;
+
         gtag("event", "page_view", {
           page_title: pageTitle,
           page_path: pagePath,
-          // 'send_to'는 필요시 특정 측정 ID로만 전송할 때 사용하며,
-          // 'config'에서 이미 기본 측정 ID가 설정되었으므로 일반적으로 생략 가능합니다.
-          // send_to: 'G-YOUR_MEASUREMENT_ID' // <<-- 여기에 발급받은 측정 ID 입력!
         });
         console.log(`[GA4] Page view event sent for: ${pagePath}`);
       }
-      // [수정 끝]
     } else {
       console.warn(
         `Page module '${pageName}' does not have an init() function.`
@@ -90,11 +160,8 @@ async function route() {
 // 메인 탭 클릭 이벤트 리스너
 mainTabs.addEventListener("click", (e) => {
   if (e.target.matches(".tab") && !e.target.classList.contains("active")) {
-    // 기존 활성 탭 비활성화
     mainTabs.querySelector(".tab.active")?.classList.remove("active");
-    // 새 탭 활성화
     e.target.classList.add("active");
-    // 라우트 실행
     route();
   }
 });
@@ -112,19 +179,14 @@ async function initializeApp() {
   try {
     const allSpiritsRaw = await api.fetchAllSpirits();
 
-    // --- 여기부터 추가/수정될 코드 ---
-    // Firestore에서 가져온 이미지 경로를 GitHub Pages 경로에 맞게 변환
     const allSpiritsTransformed = allSpiritsRaw.map((spirit) => {
-      // image 경로가 'images/'로 시작하는 경우 'assets/img/'로 변경
-      // 정규식 '^images\/'는 문자열 시작 부분의 'images/'만 변경하도록 합니다.
       const transformedImage = spirit.image.replace(/^images\//, "assets/img/");
       return {
         ...spirit,
         image: transformedImage,
       };
     });
-    setAllSpirits(allSpiritsTransformed); // 변환된 데이터를 전역 상태에 저장
-    // --- 여기까지 추가/수정될 코드 ---
+    setAllSpirits(allSpiritsTransformed);
 
     await route();
   } catch (error) {

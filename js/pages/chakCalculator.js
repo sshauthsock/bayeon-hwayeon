@@ -1,7 +1,9 @@
+// js/pages/chakCalculator.js
+
 import { createElement } from "../utils.js";
 import { showLoading, hideLoading } from "../loadingIndicator.js";
 import * as api from "../api.js";
-import { showChakResultsModal } from "../components/chakResultsModal.js"; // 새로 생성할 모달 컴포넌트 임포트
+import { showChakResultsModal } from "../components/chakResultsModal.js";
 
 const pageState = {
   chakData: null, // 서버에서 불러온 착 데이터 (equipment, costs, constants)
@@ -16,9 +18,6 @@ const elements = {}; // DOM 요소 참조를 저장할 객체
 
 /**
  * 페이지의 기본 HTML 구조를 반환합니다.
- * 참고: 이 HTML 문자열이 매우 길고 복잡하므로,
- * 실제 대규모 프로젝트에서는 HTML <template> 태그를 사용하거나,
- * JavaScript에서 DOM을 직접 생성하는 방식으로 구조를 분할하는 것이 유지보수에 유리할 수 있습니다.
  */
 function getHTML() {
   return `
@@ -78,7 +77,6 @@ function getHTML() {
         </div>
       </div>
     </div>
-    <!-- 모달은 이제 chakResultsModal.js에서 관리 -->
   `;
 }
 
@@ -87,10 +85,8 @@ function getHTML() {
  * @param {HTMLElement} container - 페이지 내용이 렌더링될 DOM 요소
  */
 export async function init(container) {
-  // <-- init 함수가 여기 export 되어 있습니다.
-  container.innerHTML = getHTML(); // 페이지 HTML 삽입
+  container.innerHTML = getHTML();
 
-  // DOM 요소 참조 저장
   elements.container = container;
   elements.equipmentSelector = container.querySelector("#equipment-selector");
   elements.levelSelector = container.querySelector("#level-selector");
@@ -106,7 +102,6 @@ export async function init(container) {
   elements.selectedStats = container.querySelector("#selected-stats");
   elements.resourceSummary = container.querySelector("#resource-summary");
 
-  // 로딩 인디케이터 표시 (app-container에 오버레이)
   showLoading(
     container,
     "착 데이터 로딩 중...",
@@ -114,14 +109,13 @@ export async function init(container) {
   );
 
   try {
-    pageState.chakData = await api.fetchChakData(); // 착 데이터 불러오기
-    collectAllStatNames(); // 모든 스탯 이름 수집 (검색 필터링용)
-    populateStatOptions(); // 스탯 검색 옵션 채우기
-    renderSelectors(); // 장비 부위 및 강화 레벨 선택기 렌더링
-    renderStatCards(); // 현재 선택된 부위/레벨의 스탯 카드 렌더링
-    renderSummary(); // 능력치 합계 및 자원 현황 렌더링 (초기 상태)
+    pageState.chakData = await api.fetchChakData();
+    collectAllStatNames();
+    populateStatOptions();
+    renderSelectors();
+    renderStatCards();
+    renderSummary();
 
-    // 이벤트 리스너 설정
     elements.equipmentSelector.addEventListener("click", handleSelectorClick);
     elements.levelSelector.addEventListener("click", handleSelectorClick);
     elements.statsDisplay.addEventListener("click", handleStatAction);
@@ -136,10 +130,9 @@ export async function init(container) {
     console.log("착 계산 페이지 초기화 완료.");
   } catch (error) {
     console.error("Chak page init error:", error);
-    // 오류 메시지 표시
     container.innerHTML = `<p class="error-message">착 데이터를 불러오는 데 실패했습니다: ${error.message}</p>`;
   } finally {
-    hideLoading(); // 로딩 인디케이터 숨김
+    hideLoading();
   }
 }
 
@@ -147,8 +140,6 @@ export async function init(container) {
  * 페이지 정리 함수.
  */
 export function cleanup() {
-  // <-- cleanup 함수가 여기 export 되어 있습니다.
-  // 이벤트 리스너 제거
   if (elements.equipmentSelector)
     elements.equipmentSelector.removeEventListener(
       "click",
@@ -184,7 +175,6 @@ export function cleanup() {
     elements.statOptions.style.display = "none";
   });
 
-  // cleanup for chakResultsModal is handled within its module.
   console.log("착 계산 페이지 정리 완료.");
 }
 
@@ -194,16 +184,14 @@ export function cleanup() {
 function renderSelectors() {
   const { parts, levels } = pageState.chakData.constants;
 
-  // 초기 선택값 설정 (데이터 로드 후 첫 번째 항목 선택)
-  pageState.selectedPart = `${parts[0]}_0`; // "투구_0" (고유 ID를 위해 인덱스 추가)
-  pageState.selectedLevel = levels[0]; // "+1"
+  pageState.selectedPart = `${parts[0]}_0`;
+  pageState.selectedLevel = levels[0];
 
   elements.equipmentSelector.innerHTML = "";
   elements.levelSelector.innerHTML = "";
 
-  // 장비 부위 버튼 렌더링
   parts.forEach((part, index) => {
-    const uniquePartId = `${part}_${index}`; // 각 부위의 고유 ID (같은 이름의 부위가 있을 수 있으므로)
+    const uniquePartId = `${part}_${index}`;
     const btn = createElement("button", "selector-btn equip-btn", {
       text: part,
       "data-part-id": uniquePartId,
@@ -230,7 +218,7 @@ function renderSelectors() {
     elements.levelSelector.appendChild(btn);
   });
 
-  updateActiveSelectors(); // 선택된 버튼 활성화 스타일 적용
+  updateActiveSelectors();
 }
 
 /**
@@ -239,21 +227,19 @@ function renderSelectors() {
 function renderStatCards() {
   if (!pageState.selectedPart || !pageState.selectedLevel) return;
 
-  const dataKeyPart = pageState.selectedPart.split("_")[0]; // "투구_0" -> "투구"
-  const levelKey = `lv${pageState.selectedLevel.replace("+", "")}`; // "+1" -> "lv1"
+  const dataKeyPart = pageState.selectedPart.split("_")[0];
+  const levelKey = `lv${pageState.selectedLevel.replace("+", "")}`;
   const stats = pageState.chakData.equipment[dataKeyPart]?.[levelKey] || {};
 
-  elements.statsDisplay.innerHTML = ""; // 기존 스탯 카드 비우기
-  let statIndex = 0; // 카드 ID 생성을 위한 인덱스
+  elements.statsDisplay.innerHTML = "";
+  let statIndex = 0;
   Object.entries(stats).forEach(([statName, maxValue]) => {
-    // 각 스탯 카드의 고유 ID 생성 ( statName + selectedPart + selectedLevel + index )
     const cardId = `${statName}_${pageState.selectedPart}_${pageState.selectedLevel}_${statIndex}`;
-    // 해당 스탯의 저장된 상태를 불러오거나 초기화
     const state = pageState.statState[cardId] || {
       level: 0,
       value: 0,
       isUnlocked: false,
-      isFirst: false, // 이 스탯이 해당 부위/레벨에서 첫 번째로 개방된 스탯인지
+      isFirst: false,
       part: pageState.selectedPart,
       partLevel: pageState.selectedLevel,
       statName: statName,
@@ -264,15 +250,15 @@ function renderStatCards() {
     elements.statsDisplay.appendChild(card);
     statIndex++;
   });
-  updateAllButtonStates(); // 모든 스탯 카드의 버튼 상태 업데이트
-  updateLevelButtonIndicators(); // 레벨 선택기 버튼의 진행도 표시 업데이트
+  updateAllButtonStates();
+  updateLevelButtonIndicators();
 }
 
 /**
  * 하나의 능력치 카드를 생성합니다.
  */
 function createStatCard(statName, maxValue, state, cardId, statIndex) {
-  const displayStatName = statName.replace(/\d+$/, ""); // 스탯 이름에서 숫자 제거 (예: strength0 -> strength)
+  const displayStatName = statName.replace(/\d+$/, "");
   const card = createElement("div", "stat-card", {
     "data-card-id": cardId,
     "data-stat-index": statIndex,
@@ -290,7 +276,7 @@ function createStatCard(statName, maxValue, state, cardId, statIndex) {
         </div>
         <button class="action-btn"></button>
     `;
-  updateStatCardUI(card, state, maxValue); // 카드 UI 업데이트
+  updateStatCardUI(card, state, maxValue);
   return card;
 }
 
@@ -308,15 +294,15 @@ function updateStatCardUI(card, state, maxValue) {
   const dotsContainer = card.querySelector(".progress-dots");
   dotsContainer.innerHTML = [...Array(3)]
     .map((_, i) => {
-      let dotClass = "gray"; // 기본은 회색
+      let dotClass = "gray";
       if (state.isUnlocked) {
-        dotClass = i < state.level ? "blue" : "yellow"; // 개방되었으면 레벨에 따라 파랑/노랑
+        dotClass = i < state.level ? "blue" : "yellow";
       }
       return `<span class="progress-dot ${dotClass}"></span>`;
     })
     .join("");
 
-  updateButtonState(card, state); // 버튼 상태 업데이트
+  updateButtonState(card, state);
 }
 
 /**
@@ -324,7 +310,6 @@ function updateStatCardUI(card, state, maxValue) {
  * '첫 번째 개방' 규칙에 따라 버튼 텍스트와 비용이 달라집니다.
  */
 function updateAllButtonStates() {
-  // 현재 부위/레벨에서 이미 '첫 번째' 스탯이 개방되었는지 확인
   const hasFirstUnlocked = Object.values(pageState.statState).some(
     (s) =>
       s.part === pageState.selectedPart &&
@@ -350,13 +335,11 @@ function updateButtonState(card, state, hasFirstUnlockedOverride = null) {
   const button = card.querySelector(".action-btn");
   if (!button) return;
 
-  button.disabled = false; // 기본적으로 활성화
+  button.disabled = false;
 
-  // 현재 컨텍스트에서의 '첫 번째 개방' 여부
   const hasFirstUnlocked =
-    hasFirstUnlockedOverride ?? // 인자로 넘어왔으면 사용
+    hasFirstUnlockedOverride ??
     Object.values(pageState.statState).some(
-      // 없으면 현재 상태에서 직접 계산
       (s) =>
         s.part === pageState.selectedPart &&
         s.partLevel === pageState.selectedLevel &&
@@ -366,18 +349,16 @@ function updateButtonState(card, state, hasFirstUnlockedOverride = null) {
   if (state.isUnlocked) {
     if (state.level >= 3) {
       button.innerHTML = `<span>완료</span>`;
-      button.disabled = true; // 최대 레벨 도달 시 비활성화
+      button.disabled = true;
     } else {
-      // 이미 개방된 상태에서 강화 비용
       const costKey = state.isFirst
         ? "upgradeFirst"
-        : `upgradeOther${state.level}`; // 레벨에 따라 다른 비용
+        : `upgradeOther${state.level}`;
       const cost = pageState.chakData.costs[costKey];
       button.innerHTML = `<img src="assets/img/fivecolored-beads.jpg" class="btn-icon"> <span>강화 ${cost}</span>`;
     }
   } else {
-    // 개방되지 않은 상태에서 개방 비용
-    const costKey = hasFirstUnlocked ? "unlockOther" : "unlockFirst"; // 첫 번째인지 아닌지에 따라 비용 다름
+    const costKey = hasFirstUnlocked ? "unlockOther" : "unlockFirst";
     const cost = pageState.chakData.costs[costKey];
     const icon = hasFirstUnlocked ? "gold-button.jpg" : "fivecolored-beads.jpg";
     button.innerHTML = `<img src="assets/img/${icon}" class="btn-icon"> <span>선택 ${cost}</span>`;
@@ -393,13 +374,11 @@ function updateActiveSelectors() {
     .forEach((btn) => {
       const isActive = btn.dataset.partId === pageState.selectedPart;
       btn.classList.toggle("active", isActive);
-      // CSS 클래스도 함께 토글 (예: bg-sky-500)
       btn.classList.toggle("bg-sky-500", isActive);
     });
   elements.levelSelector.querySelectorAll(".selector-btn").forEach((btn) => {
     const isActive = btn.dataset.level === pageState.selectedLevel;
     btn.classList.toggle("active", isActive);
-    // CSS 클래스도 함께 토글 (예: bg-emerald-500)
     btn.classList.toggle("bg-emerald-500", isActive);
   });
 }
@@ -409,22 +388,21 @@ function updateActiveSelectors() {
  */
 function updateLevelButtonIndicators() {
   elements.levelSelector.querySelectorAll(".level-btn").forEach((btn) => {
-    const level = btn.dataset.level; // 예: "+1"
-    const dataKeyPart = pageState.selectedPart.split("_")[0]; // 예: "투구"
-    const levelKey = `lv${level.replace("+", "")}`; // 예: "lv1"
+    const level = btn.dataset.level;
+    const dataKeyPart = pageState.selectedPart.split("_")[0];
+    const levelKey = `lv${level.replace("+", "")}`;
     const statsForLevel =
       pageState.chakData.equipment[dataKeyPart]?.[levelKey] || {};
 
     const dotsContainer = btn.querySelector(".progress-dots");
     if (!dotsContainer) return;
-    dotsContainer.innerHTML = ""; // 기존 점들 비우기
+    dotsContainer.innerHTML = "";
 
     const statEntries = Object.entries(statsForLevel);
-    const maxDots = Math.min(4, statEntries.length); // 최대 4개 또는 실제 스탯 수만큼 점 표시
+    const maxDots = Math.min(4, statEntries.length);
 
     for (let i = 0; i < maxDots; i++) {
       const [statName] = statEntries[i];
-      // 스탯 카드 ID와 동일한 로직으로 ID 생성 (현재 선택된 part, level 기준)
       const cardId = `${statName}_${pageState.selectedPart}_${level}_${i}`;
       const state = pageState.statState[cardId] || {
         isUnlocked: false,
@@ -432,9 +410,9 @@ function updateLevelButtonIndicators() {
       };
       const dot = createElement("span", "progress-dot");
       if (state.isUnlocked) {
-        dot.classList.add(state.level === 3 ? "blue" : "yellow"); // 최대 강화는 파랑, 부분 강화는 노랑
+        dot.classList.add(state.level === 3 ? "blue" : "yellow");
       } else {
-        dot.classList.add("gray"); // 개방 안 됨
+        dot.classList.add("gray");
       }
       dotsContainer.appendChild(dot);
     }
@@ -451,14 +429,13 @@ function updateLevelProgressBar(btn, totalStats) {
   const statusText = btn.querySelector(".level-status");
 
   if (!progressBar || !statusText || totalStats === 0) {
-    // 스탯이 없으면 진행도 0으로 초기화
     if (progressBar) progressBar.style.width = `0%`;
     if (statusText) statusText.textContent = "";
     return;
   }
 
-  let totalPoints = 0; // 현재 레벨에서 개방된 스탯들의 총 강화 레벨 합
-  let unlockedCount = 0; // 현재 레벨에서 개방된 스탯의 개수
+  let totalPoints = 0;
+  let unlockedCount = 0;
 
   Object.values(pageState.statState).forEach((state) => {
     if (
@@ -471,12 +448,12 @@ function updateLevelProgressBar(btn, totalStats) {
     }
   });
 
-  const totalMaxPoints = totalStats * 3; // 해당 레벨의 모든 스탯이 최대 강화되었을 때의 총점
+  const totalMaxPoints = totalStats * 3;
   const percent =
     totalMaxPoints > 0 ? Math.round((totalPoints / totalMaxPoints) * 100) : 0;
 
   progressBar.style.width = `${percent}%`;
-  progressBar.className = "level-progress-bar"; // 기존 클래스 제거 후 다시 추가
+  progressBar.className = "level-progress-bar";
   if (percent === 0) progressBar.classList.add("empty");
   else if (percent < 100) progressBar.classList.add("partial");
   else progressBar.classList.add("complete");
@@ -489,24 +466,21 @@ function updateLevelProgressBar(btn, totalStats) {
  * 능력치 합계와 자원 현황을 계산하고 렌더링합니다.
  */
 async function renderSummary() {
-  // 요약 영역에 로딩 인디케이터 표시
   showLoading(elements.summaryDisplay, "합계 계산 중...");
 
   try {
-    // 백엔드 API 호출하여 계산 결과 받아오기
     const result = await api.calculateChak({
       statState: pageState.statState,
       userResources: pageState.userResources,
     });
     const { summary, resources } = result;
 
-    // 능력치 합계 HTML 생성
     let statHtml =
       Object.keys(summary).length > 0
         ? `<div class="summary-section"><div class="stat-list">${Object.entries(
             summary
           )
-            .sort((a, b) => b[1] - a[1]) // 값 내림차순 정렬
+            .sort((a, b) => b[1] - a[1])
             .map(
               ([stat, value]) =>
                 `<div class="stat-item"><span class="stat-name">${stat}</span><span class="stat-value">+${value}</span></div>`
@@ -516,7 +490,6 @@ async function renderSummary() {
 
     elements.summaryDisplay.innerHTML = statHtml;
 
-    // 자원 현황 HTML 생성
     elements.resourceSummary.innerHTML = `
             <div class="resource-summary-item">
                 <img src="assets/img/gold-button.jpg" class="resource-icon-img-small">
@@ -544,7 +517,7 @@ async function renderSummary() {
     console.error("Chak summary calculation failed:", error);
     elements.summaryDisplay.innerHTML = `<p class="error-message">계산 중 오류가 발생했습니다.</p>`;
   } finally {
-    hideLoading(); // 로딩 인디케이터 숨김
+    hideLoading();
   }
 }
 
@@ -560,9 +533,8 @@ function handleSelectorClick(e) {
   } else if (btn.classList.contains("level-btn")) {
     pageState.selectedLevel = btn.dataset.level;
   }
-  updateActiveSelectors(); // 선택된 버튼 스타일 업데이트
-  renderStatCards(); // 스탯 카드 재렌더링
-  // renderSummary(); // 선택기 변경만으로 합계를 업데이트할 필요는 없음
+  updateActiveSelectors();
+  renderStatCards();
 }
 
 /**
@@ -573,7 +545,7 @@ function handleStatAction(e) {
   if (!card) return;
 
   const cardId = card.dataset.cardId;
-  const statName = card.dataset.statName; // 원래 스탯 이름 (예: strength0)
+  const statName = card.dataset.statName;
   if (!statName) return;
 
   const dataKeyPart = pageState.selectedPart.split("_")[0];
@@ -585,14 +557,13 @@ function handleStatAction(e) {
     return;
   }
 
-  // 현재 스탯 상태를 깊은 복사하여 불변성 유지 (원래 상태는 그대로 두고 새로운 상태를 만듦)
   let state = JSON.parse(
     JSON.stringify(
       pageState.statState[cardId] || {
         level: 0,
         value: 0,
         isUnlocked: false,
-        isFirst: false, // 이 스탯이 해당 부위/레벨에서 첫 번째로 개방된 스탯인지
+        isFirst: false,
         part: pageState.selectedPart,
         partLevel: pageState.selectedLevel,
         statName: statName,
@@ -602,37 +573,30 @@ function handleStatAction(e) {
   );
 
   if (e.target.closest(".action-btn")) {
-    // 개방 또는 강화 버튼 클릭
-    if (state.level >= 3) return; // 이미 최대 레벨이면 더 이상 진행 불가
+    if (state.level >= 3) return;
 
     if (!state.isUnlocked) {
-      // 아직 개방되지 않은 경우
-      // 현재 부위/레벨에서 첫 번째로 개방되는 스탯인지 확인
       const hasFirst = Object.values(pageState.statState).some(
         (s) =>
           s.part === pageState.selectedPart &&
           s.partLevel === pageState.selectedLevel &&
           s.isFirst
       );
-      state.isFirst = !hasFirst; // 첫 번째가 아니라면 false, 첫 번째라면 true
-      state.isUnlocked = true; // 개방 상태로 변경
-      // 첫 개방 시 레벨 0으로 설정 (다음 클릭 시 레벨 1로 증가)
-      state.level = 0; // 레벨을 바로 증가시키지 않고, 개방만 먼저 표시
+      state.isFirst = !hasFirst;
+      state.isUnlocked = true;
+      state.level = 0;
     } else {
-      // 이미 개방된 경우, 레벨 증가
       state.level++;
     }
   } else if (e.target.closest(".redistribute-btn")) {
-    // 초기화 버튼 클릭
-    delete pageState.statState[cardId]; // 상태에서 해당 스탯 제거
-    renderStatCards(); // UI 재렌더링
-    renderSummary(); // 합계 재렌더링
-    return; // 재렌더링 후 함수 종료
+    delete pageState.statState[cardId];
+    renderStatCards();
+    renderSummary();
+    return;
   } else {
-    return; // 다른 곳 클릭 시 무시
+    return;
   }
 
-  // 스탯 값 계산 (프론트엔드 로직에 따라)
   state.value = calculateStatValue(
     state.maxValue,
     state.level,
@@ -640,26 +604,24 @@ function handleStatAction(e) {
     state.isFirst
   );
 
-  pageState.statState[cardId] = state; // 변경된 상태 저장
+  pageState.statState[cardId] = state;
 
-  updateStatCardUI(card, state, maxValue); // 카드 UI 업데이트
-  updateAllButtonStates(); // 다른 카드 버튼 상태도 업데이트 (첫 번째 개방 여부 영향)
-  updateLevelButtonIndicators(); // 레벨 선택기 진행도 업데이트
-  renderSummary(); // 합계 및 자원 현황 재렌더링
+  updateStatCardUI(card, state, maxValue);
+  updateAllButtonStates();
+  updateLevelButtonIndicators();
+  renderSummary();
 }
 
 /**
  * 스탯의 현재 레벨에 따른 값을 계산합니다. (프론트엔드 로직 일치)
  */
 function calculateStatValue(maxValue, level, isUnlocked, isFirst) {
-  if (!isUnlocked) return 0; // 개방되지 않았으면 값은 0
+  if (!isUnlocked) return 0;
 
   if (isFirst) {
-    // 첫 번째 개방 스탯의 값은 (최대값 / 3) * 현재 레벨
     return Math.floor((maxValue / 3) * level);
   } else {
-    // 첫 번째가 아닌 스탯의 값은 복잡한 공식 적용
-    if (level === 0) return 0; // 초기값 (개방만 됨)
+    if (level === 0) return 0;
     else if (level === 1)
       return Math.floor(maxValue / 15) + Math.floor(maxValue / 3);
     else return Math.floor(maxValue / 15) + Math.floor(maxValue / 3) * level;
@@ -674,7 +636,7 @@ function handleResourceChange() {
     goldButton: parseInt(elements.goldButton.value, 10) || 0,
     colorBall: parseInt(elements.colorBall.value, 10) || 0,
   };
-  renderSummary(); // 자원 변경 시 합계만 재렌더링
+  renderSummary();
 }
 
 /**
@@ -685,12 +647,11 @@ function collectAllStatNames() {
   for (const part in pageState.chakData.equipment) {
     for (const level in pageState.chakData.equipment[part]) {
       for (const statName in pageState.chakData.equipment[part][level]) {
-        // 숫자 부분 제거 (예: strength0 -> strength)
         stats.add(statName.replace(/\d+$/, ""));
       }
     }
   }
-  pageState.allAvailableStats = Array.from(stats).sort(); // 중복 제거 및 정렬
+  pageState.allAvailableStats = Array.from(stats).sort();
 }
 
 /**
@@ -701,7 +662,7 @@ function populateStatOptions() {
   pageState.allAvailableStats.forEach((stat) => {
     const option = createElement("div", "stat-option", { text: stat });
     option.addEventListener("click", (e) => {
-      e.stopPropagation(); // 드롭다운 닫힘 방지
+      e.stopPropagation();
       toggleStatSelection(stat);
     });
     elements.statOptions.appendChild(option);
@@ -713,15 +674,14 @@ function populateStatOptions() {
  */
 function setupSearchEventListeners() {
   elements.searchInput.addEventListener("click", (e) => {
-    e.stopPropagation(); // 클릭 시 드롭다운 닫힘 방지
-    elements.statOptions.style.display = "block"; // 드롭다운 표시
-    filterStatOptions(elements.searchInput.value); // 현재 입력값으로 필터링
+    e.stopPropagation();
+    elements.statOptions.style.display = "block";
+    filterStatOptions(elements.searchInput.value);
   });
   elements.searchInput.addEventListener("input", () =>
     filterStatOptions(elements.searchInput.value)
   );
-  elements.searchButton.addEventListener("click", searchStats); // 검색 버튼 클릭 이벤트
-  // 문서 전체 클릭 시 드롭다운 숨기기
+  elements.searchButton.addEventListener("click", searchStats);
   document.addEventListener("click", () => {
     elements.statOptions.style.display = "none";
   });
@@ -746,14 +706,14 @@ function filterStatOptions(filterText) {
 function toggleStatSelection(stat) {
   const index = pageState.selectedStats.indexOf(stat);
   if (index === -1) {
-    pageState.selectedStats.push(stat); // 선택
+    pageState.selectedStats.push(stat);
   } else {
-    pageState.selectedStats.splice(index, 1); // 해제
+    pageState.selectedStats.splice(index, 1);
   }
-  updateSelectedStatsDisplay(); // 선택된 스탯 칩 UI 업데이트
-  elements.statOptions.style.display = "none"; // 드롭다운 숨기기
-  elements.searchInput.value = ""; // 검색 입력창 초기화
-  filterStatOptions(""); // 전체 옵션 다시 표시
+  updateSelectedStatsDisplay();
+  elements.statOptions.style.display = "none";
+  elements.searchInput.value = "";
+  filterStatOptions("");
 }
 
 /**
@@ -767,7 +727,7 @@ function updateSelectedStatsDisplay() {
     });
     chip
       .querySelector(".remove-stat")
-      .addEventListener("click", () => toggleStatSelection(stat)); // 칩 제거 이벤트
+      .addEventListener("click", () => toggleStatSelection(stat));
     elements.selectedStats.appendChild(chip);
   });
 }
@@ -806,18 +766,16 @@ function optimizeStats(type) {
   const targetStats = type === "boss" ? BOSS_STATS : PVP_STATS;
   const title = type === "boss" ? "보스용 추천 조합" : "PvP용 추천 조합";
 
-  // chakResultsModal 컴포넌트 사용
   showChakResultsModal(
     pageState.chakData,
     pageState.statState,
     title,
     targetStats,
     (partId, levelKey) => {
-      // 모달에서 특정 스탯 위치를 클릭했을 때 호출되는 콜백
       pageState.selectedPart = partId;
       pageState.selectedLevel = levelKey;
       updateActiveSelectors();
-      renderStatCards(); // 해당 부위/레벨의 스탯 카드 뷰로 이동
+      renderStatCards();
     }
   );
 }
@@ -830,18 +788,53 @@ function searchStats() {
     alert("검색할 능력치를 선택해주세요.");
     return;
   }
-  // chakResultsModal 컴포넌트 사용
   showChakResultsModal(
     pageState.chakData,
     pageState.statState,
     "검색 결과",
     pageState.selectedStats,
     (partId, levelKey) => {
-      // 모달에서 특정 스탯 위치를 클릭했을 때 호출되는 콜백
       pageState.selectedPart = partId;
       pageState.selectedLevel = levelKey;
       updateActiveSelectors();
-      renderStatCards(); // 해당 부위/레벨의 스탯 카드 뷰로 이동
+      renderStatCards();
     }
   );
+}
+
+/**
+ * 이 페이지에 대한 도움말 콘텐츠 HTML을 반환합니다.
+ * main.js에서 호출하여 도움말 툴팁에 주입됩니다.
+ */
+export function getHelpContentHTML() {
+  return `
+        <div class="content-block">
+            <h2>착(장비 강화) 시스템 및 계산기 사용 안내</h2>
+            <p>바람의나라: 연의 '착' 시스템은 장비 부위별로 추가 능력치를 개방하고 강화하여 캐릭터를 세밀하게 육성할 수 있는 핵심 콘텐츠입니다. '바연화연'의 착 계산기는 각 부위의 스탯 정보를 확인하고, 원하는 스탯을 가진 부위를 찾아 효과적으로 강화 계획을 세울 수 있도록 돕습니다.</p>
+
+            <h3>🔎 페이지 기능 설명</h3>
+            <ul>
+                <li><strong>장비 부위 선택:</strong> 좌측 '장비 부위' 섹션에서 강화하려는 부위(투구, 갑옷 등)를 선택하세요.</li>
+                <li><strong>강화 레벨 선택:</strong> 선택한 장비 부위의 '강화 레벨'을 선택하세요. 각 레벨별로 개방할 수 있는 능력치가 다릅니다. 레벨별 진행도(개방된 스탯 수)도 확인할 수 있습니다.</li>
+                <li><strong>능력치 정보:</strong> 선택된 부위와 레벨에서 개방 가능한 능력치 목록이 표시됩니다.
+                    <ul>
+                        <li><strong>개방/강화:</strong> 각 스탯 카드 하단의 버튼을 클릭하여 능력치를 개방하거나 강화할 수 있습니다. 첫 번째 능력치 개방은 오색구슬, 이후 능력치 개방은 황금단추가 필요합니다. 강화에는 모두 오색구슬이 소모됩니다.</li>
+                        <li><strong>초기화(↻):</strong> 개방된 능력치를 초기화하여 다른 능력치로 재개방할 수 있습니다.</li>
+                    </ul>
+                </li>
+                <li><strong>보유 자원 입력:</strong> '황금 단추'와 '오색 구슬'의 보유 수량을 입력하여 현재 자원으로 개방/강화 가능한 능력치를 파악하고, 총 소모량을 추적할 수 있습니다.</li>
+                <li><strong>능력치 합계 및 자원 현황:</strong> 개방된 모든 착 능력치의 총합과, 누적된 황금 단추/오색 구슬 소모량을 실시간으로 보여줍니다.</li>
+                <li><strong>프리셋 조합 (보스용, PvP용):</strong> '보스용 조합', 'PvP용 조합' 버튼을 클릭하면 해당 목적에 맞는 추천 스탯들을 가진 착 부위/레벨 목록을 모달 창으로 보여줍니다.</li>
+                <li><strong>능력치 검색:</strong> '능력치 검색' 입력창에 원하는 스탯을 입력하거나 선택하여 해당 스탯이 부여되는 모든 착 부위/레벨 목록을 모달 창으로 확인할 수 있습니다.</li>
+                <li><strong>모달 내 링크 이동:</strong> 프리셋 또는 검색 결과 모달에서 특정 스탯 위치(예: 투구+1의 피해저항관통)를 클릭하면, 해당 착 부위와 레벨 뷰로 자동으로 이동하여 편리하게 강화 계획을 세울 수 있습니다.</li>
+            </ul>
+
+            <h3>💡 착 시스템 팁 & 전략</h3>
+            <ul>
+                <li><strong>첫 번째 착 개방의 중요성:</strong> 각 착 부위/레벨에서 첫 번째로 개방하는 능력치는 다른 능력치와 비용 및 증가량이 다릅니다. 일반적으로 첫 번째는 오색구슬로, 이후는 황금단추로 개방됩니다.</li>
+                <li><strong>비용 효율성:</strong> 착 시스템은 많은 자원을 소모하므로, 필요한 스탯을 파악하고 계획적으로 개방/강화하는 것이 중요합니다. 계산기를 활용하여 자원 소모량을 미리 예측하세요.</li>
+                <li><strong>상황별 착 세팅:</strong> 보스 사냥, 일반 사냥, PvP 등 상황에 따라 중요하게 작용하는 착 능력치가 다릅니다. 여러 조합을 시뮬레이션하여 최적의 세팅을 찾아보세요.</li>
+            </ul>
+        </div>
+    `;
 }

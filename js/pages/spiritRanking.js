@@ -1,7 +1,9 @@
+// js/pages/spiritRanking.js
+
 import { state as globalState } from "../state.js";
 import { createElement } from "../utils.js";
 import * as api from "../api.js";
-import { showInfo as showSpiritInfoModal } from "../modalHandler.js"; // showInfo 대신 showSpiritInfoModal 별칭 사용
+import { showInfo as showSpiritInfoModal } from "../modalHandler.js";
 import { showLoading, hideLoading } from "../loadingIndicator.js";
 import { STATS_MAPPING } from "../constants.js";
 
@@ -11,9 +13,6 @@ const pageState = {
   currentStatKey: "bind", // 능력치 랭킹일 경우 선택된 스탯 키 (초기값: "bind" = 환산점수)
 };
 const elements = {}; // DOM 요소 참조를 저장할 객체
-
-// 인메모리 캐시 (api.js에서 관리하므로, 여기서는 직접 접근 대신 api 함수 사용)
-// if (!window.rankingCache) window.rankingCache = {}; // window 객체 사용 대신 api.js에서 모듈 스코프 캐시 사용
 
 /**
  * 페이지의 기본 HTML 구조를 반환합니다.
@@ -49,9 +48,8 @@ function getHTML() {
  * 랭킹 데이터를 로드하고 렌더링합니다. 캐싱 전략을 사용합니다.
  */
 async function loadAndRenderRankings() {
-  // `api.js`의 `fetchRankings` 함수가 캐싱을 담당하므로, 여기서는 직접 캐시 접근 로직 제거
   showLoading(
-    elements.rankingsContainer, // 랭킹 컨테이너 내부에 로딩 오버레이 표시
+    elements.rankingsContainer,
     "랭킹 데이터 로딩 중",
     `${pageState.currentCategory} ${
       pageState.currentRankingType === "bond" ? "결속" : "능력치"
@@ -63,13 +61,13 @@ async function loadAndRenderRankings() {
       pageState.currentRankingType,
       pageState.currentStatKey
     );
-    const rankings = data.rankings || []; // 백엔드 응답 구조에 맞게 `rankings` 필드 사용
+    const rankings = data.rankings || [];
     renderRankings(rankings);
   } catch (error) {
     console.error("랭킹 데이터 로드 실패:", error);
     elements.rankingsContainer.innerHTML = `<p class="error-message">랭킹 데이터를 불러오는 데 실패했습니다: ${error.message}</p>`;
   } finally {
-    hideLoading(); // 로딩 인디케이터 숨김
+    hideLoading();
   }
 }
 
@@ -79,7 +77,6 @@ async function loadAndRenderRankings() {
  * @param {Array<object>} rankingsData - 랭킹 데이터 배열
  */
 function renderRankings(rankingsData) {
-  // 랭킹 종류에 따라 적절한 렌더링 함수 호출
   if (pageState.currentRankingType === "bond") {
     renderBondRankings(rankingsData);
   } else {
@@ -93,14 +90,13 @@ function renderRankings(rankingsData) {
  */
 function renderBondRankings(rankings) {
   const container = elements.rankingsContainer;
-  if (!container) return; // 컨테이너 없으면 종료
+  if (!container) return;
 
   if (rankings.length === 0) {
     container.innerHTML = `<p class="no-data-message">결속 랭킹 데이터가 없습니다.</p>`;
     return;
   }
 
-  // HTML 테이블 구조 생성
   const tableHtml = `
     <div class="ranking-table-container">
       <table class="ranking-table">
@@ -116,7 +112,6 @@ function renderBondRankings(rankings) {
               <td class="spirits-column"><div class="spirits-container">${ranking.spirits
                 .map(
                   (spirit) =>
-                    // 이미지 클릭 시 모달 열기 위해 data-spirit-name 추가
                     `<img src="${spirit.image}" alt="${spirit.name}" title="${spirit.name}" class="spirit-image" data-spirit-name="${spirit.name}">`
                 )
                 .join("")}</div></td>
@@ -175,7 +170,7 @@ function renderStatRankings(rankings) {
     html += `
       <div class="stat-card ${rankClass}" data-spirit-name="${ranking.name}">
         <div class="rank-number">${index + 1}</div>
-        <div class="spirit-image-container"><img src="/${ranking.image}" alt="${
+        <div class="spirit-image-container"><img src="${ranking.image}" alt="${
       ranking.name
     }" class="spirit-image"></div>
         <div class="spirit-name">${ranking.name}</div>
@@ -196,7 +191,7 @@ function renderSetInfo(ranking) {
   let info = "";
   if (ranking.gradeCounts) {
     info += Object.entries(ranking.gradeCounts)
-      .filter(([, count]) => count >= 2) // 2개 이상일 때만 표시
+      .filter(([, count]) => count >= 2)
       .map(
         ([grade, count]) =>
           `<span class="grade-tag grade-tag-${
@@ -207,7 +202,7 @@ function renderSetInfo(ranking) {
   }
   if (ranking.factionCounts) {
     info += Object.entries(ranking.factionCounts)
-      .filter(([, count]) => count >= 2) // 2개 이상일 때만 표시
+      .filter(([, count]) => count >= 2)
       .map(
         ([faction, count]) =>
           `<span class="faction-tag">${faction} x${count}</span>`
@@ -222,9 +217,8 @@ function renderSetInfo(ranking) {
  */
 function initStatFilter() {
   const statSelector = elements.statSelector;
-  statSelector.innerHTML = ""; // 기존 옵션 비우기
+  statSelector.innerHTML = "";
 
-  // 환산 점수 옵션 추가
   statSelector.appendChild(
     createElement("option", "", { value: "bind", text: "장착효과(환산)" })
   );
@@ -235,8 +229,6 @@ function initStatFilter() {
     })
   );
 
-  // STATS_MAPPING에 있는 모든 스탯 추가
-  // (실제 데이터에 해당 스탯이 있어야 필터에 표시됨. 백엔드에서 제공되는 모든 스탯을 보여줌.)
   const allStatKeys = Object.keys(STATS_MAPPING).sort();
   allStatKeys.forEach((key) => {
     statSelector.appendChild(
@@ -244,7 +236,6 @@ function initStatFilter() {
     );
   });
 
-  // 초기 선택값 설정
   statSelector.value = pageState.currentStatKey;
 }
 
@@ -252,9 +243,7 @@ function initStatFilter() {
  * 페이지의 모든 주요 이벤트 리스너를 설정합니다.
  */
 function setupEventListeners() {
-  // 클릭 이벤트 위임 (탭, 랭킹 종류 버튼, 스탯 카드 등)
   elements.container.addEventListener("click", handleContainerClick);
-  // 스탯 필터 드롭다운 변경 이벤트
   elements.statSelector.addEventListener("change", handleStatChange);
 }
 
@@ -262,45 +251,40 @@ function setupEventListeners() {
  * 컨테이너 내의 클릭 이벤트를 처리합니다.
  */
 function handleContainerClick(e) {
-  // 랭킹 카테고리 탭 클릭
   const subTab = e.target.closest("#rankingCategoryTabs .tab");
   if (subTab && !subTab.classList.contains("active")) {
     elements.subTabs.querySelector(".tab.active").classList.remove("active");
     subTab.classList.add("active");
-    pageState.currentCategory = subTab.dataset.category; // 카테고리 업데이트
+    pageState.currentCategory = subTab.dataset.category;
     document.getElementById("rankingCategoryTitle").textContent =
-      pageState.currentCategory; // 제목 업데이트
-    loadAndRenderRankings(); // 랭킹 재로드 및 렌더링
+      pageState.currentCategory;
+    loadAndRenderRankings();
     return;
   }
 
-  // 랭킹 종류 (결속/능력치) 버튼 클릭
   const typeBtn = e.target.closest(".ranking-type-selector .filter-btn");
   if (typeBtn && !typeBtn.classList.contains("active")) {
     elements.container
       .querySelector(".ranking-type-selector .filter-btn.active")
       .classList.remove("active");
     typeBtn.classList.add("active");
-    pageState.currentRankingType = typeBtn.dataset.type; // 랭킹 종류 업데이트
-    // 능력치 랭킹일 경우 스탯 선택 드롭다운 표시
+    pageState.currentRankingType = typeBtn.dataset.type;
     elements.statSelectorContainer.style.display =
       pageState.currentRankingType === "stat" ? "flex" : "none";
     document.getElementById("rankingTypeTitle").textContent =
-      typeBtn.textContent; // 제목 업데이트
-    loadAndRenderRankings(); // 랭킹 재로드 및 렌더링
+      typeBtn.textContent;
+    loadAndRenderRankings();
     return;
   }
 
-  // 환수 이미지 또는 스탯 카드 클릭 (모달 표시)
   const spiritElement = e.target.closest(".spirit-image, .stat-card");
   if (spiritElement) {
-    const spiritName = spiritElement.alt || spiritElement.dataset.spirit - name; // img 태그의 alt 또는 div의 data-spirit-name
+    const spiritName = spiritElement.alt || spiritElement.dataset.spiritName;
     const spiritData = globalState.allSpirits.find(
       (s) => s.name === spiritName
     );
     if (spiritData) {
-      // showInfo 대신 showSpiritInfoModal 별칭 사용
-      showSpiritInfoModal(spiritData, null, true); // 랭킹 모드임을 알림 (레벨 25 고정)
+      showSpiritInfoModal(spiritData, null, true);
     }
   }
 }
@@ -309,8 +293,8 @@ function handleContainerClick(e) {
  * 스탯 필터 드롭다운 변경 이벤트를 처리합니다.
  */
 function handleStatChange(e) {
-  pageState.currentStatKey = e.target.value; // 스탯 키 업데이트
-  loadAndRenderRankings(); // 랭킹 재로드 및 렌더링
+  pageState.currentStatKey = e.target.value;
+  loadAndRenderRankings();
 }
 
 /**
@@ -318,9 +302,8 @@ function handleStatChange(e) {
  * @param {HTMLElement} container - 페이지 내용이 렌더링될 DOM 요소
  */
 export async function init(container) {
-  container.innerHTML = getHTML(); // 페이지 HTML 삽입
+  container.innerHTML = getHTML();
 
-  // DOM 요소 참조 저장
   elements.container = container;
   elements.subTabs = container.querySelector("#rankingCategoryTabs");
   elements.rankingsContainer = container.querySelector("#rankingsContainer");
@@ -329,13 +312,51 @@ export async function init(container) {
   );
   elements.statSelector = container.querySelector("#statSelector");
 
-  initStatFilter(); // 스탯 필터 초기화
-  setupEventListeners(); // 이벤트 리스너 설정
+  initStatFilter();
+  setupEventListeners();
 
-  // 초기 랭킹 로드 및 렌더링
   await loadAndRenderRankings();
 
   console.log("환수 랭킹 페이지 초기화 완료.");
+}
+
+/**
+ * 이 페이지에 대한 도움말 콘텐츠 HTML을 반환합니다.
+ * main.js에서 호출하여 도움말 툴팁에 주입됩니다.
+ */
+export function getHelpContentHTML() {
+  return `
+        <div class="content-block">
+            <h2>환수 랭킹 정보 사용 안내</h2>
+            <p>'바연화연'의 환수 랭킹 페이지에서는 다양한 기준(결속 점수, 특정 능력치)으로 환수의 순위를 확인할 수 있습니다. 다른 유저들의 최상위 조합이나 강력한 환수 스탯을 참고하여 여러분의 육성 목표를 세워보세요.</p>
+            <p>모든 랭킹은 25레벨 환수를 기준으로 계산됩니다.</p>
+
+            <h3>🔎 페이지 기능 설명</h3>
+            <ul>
+                <li><strong>카테고리 선택:</strong> '수호', '탑승', '변신' 탭을 클릭하여 해당 종류의 환수 랭킹을 확인하세요.</li>
+                <li><strong>랭킹 종류 선택:</strong> '결속 랭킹' 또는 '능력치 랭킹' 중 원하는 랭킹 기준을 선택하세요.
+                    <ul>
+                        <li><strong>결속 랭킹:</strong> 등급, 세력, 장착 효과를 종합한 '환산 점수'를 기준으로 5마리 환수 조합의 순위를 보여줍니다. 각 조합의 구성 환수, 등급/세력 시너지, 점수 상세 내역을 확인할 수 있습니다.</li>
+                        <li><strong>능력치 랭킹:</strong> 특정 능력치(예: '피해저항관통', '대인방어%')를 가장 높게 올려주는 환수의 순위를 보여줍니다.</li>
+                    </ul>
+                </li>
+                <li><strong>능력치 선택 (능력치 랭킹 선택 시):</strong> 능력치 랭킹을 선택하면 나타나는 드롭다운에서 '장착효과(환산)', '등록효과(환산)' 또는 원하는 특정 능력치를 선택하여 해당 능력치 랭킹을 볼 수 있습니다.</li>
+                <li><strong>환수/조합 클릭:</strong>
+                    <ul>
+                        <li>결속 랭킹에서 조합 내 환수 이미지를 클릭하거나, 능력치 랭킹에서 환수 카드를 클릭하면 해당 환수의 25레벨 상세 정보를 모달 창으로 확인할 수 있습니다.</li>
+                        <li>랭킹 모드에서는 환수 상세 정보의 레벨이 25로 고정됩니다.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>💡 랭킹 활용 팁</h3>
+            <ul>
+                <li><strong>최고 효율 조합 벤치마킹:</strong> 결속 랭킹을 통해 상위권 유저들이 어떤 환수 조합으로 시너지를 내는지 파악하고 자신의 육성 방향을 정하는 데 참고할 수 있습니다.</li>
+                <li><strong>핵심 스탯 환수 찾기:</strong> 능력치 랭킹을 활용하여 특정 스탯(예: '치명위력%', '파괴력증가')을 극대화하기 위해 어떤 환수를 육성해야 할지 알아볼 수 있습니다.</li>
+                <li><strong>메타 파악:</strong> 특정 능력치 랭킹이 높거나 결속 랭킹에 자주 등장하는 환수들을 통해 현재 게임 내 핵심 스탯 메타가 무엇인지 파악할 수 있습니다.</li>
+            </ul>
+        </div>
+    `;
 }
 
 /**
