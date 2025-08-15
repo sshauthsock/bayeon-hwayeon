@@ -106,7 +106,7 @@ function renderSpiritInfo(
   // 헤더 (환수 이미지, 이름, 레벨 컨트롤)
   const header = createElement("div", "spirit-modal-header");
   const img = createElement("img", "spirit-modal-image", {
-    src: `/${spiritData.image}`,
+    src: `${spiritData.image}`,
     alt: spiritData.name,
   });
   console.log("img in modalHandler.js = ", img);
