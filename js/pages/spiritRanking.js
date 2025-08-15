@@ -6,13 +6,16 @@ import * as api from "../api.js";
 import { showInfo as showSpiritInfoModal } from "../modalHandler.js";
 import { showLoading, hideLoading } from "../loadingIndicator.js";
 import { STATS_MAPPING } from "../constants.js";
+// resultModal.js에서 showResultModal 함수를 showOptimalResultModal이라는 이름으로 임포트
+import { showResultModal as showOptimalResultModal } from "../resultModal.js"; // <--- 이 라인 추가
 
 const pageState = {
-  currentCategory: "수호", // 현재 선택된 환수 카테고리 (수호, 탑승, 변신)
-  currentRankingType: "bond", // 현재 선택된 랭킹 종류 (결속: "bond", 능력치: "stat")
-  currentStatKey: "bind", // 능력치 랭킹일 경우 선택된 스탯 키 (초기값: "bind" = 환산점수)
+  currentCategory: "수호",
+  currentRankingType: "bond",
+  currentStatKey: "bind",
+  currentLoadedRankings: [], // <--- 새로 추가: 현재 로드된 랭킹 데이터를 저장할 변수
 };
-const elements = {}; // DOM 요소 참조를 저장할 객체
+const elements = {};
 
 /**
  * 페이지의 기본 HTML 구조를 반환합니다.
@@ -61,8 +64,8 @@ async function loadAndRenderRankings() {
       pageState.currentRankingType,
       pageState.currentStatKey
     );
-    const rankings = data.rankings || [];
-    renderRankings(rankings);
+    pageState.currentLoadedRankings = data.rankings || []; // <--- 랭킹 데이터를 pageState에 저장
+    renderRankings(pageState.currentLoadedRankings); // <--- 저장된 데이터로 렌더링
   } catch (error) {
     console.error("랭킹 데이터 로드 실패:", error);
     elements.rankingsContainer.innerHTML = `<p class="error-message">랭킹 데이터를 불러오는 데 실패했습니다: ${error.message}</p>`;
@@ -97,10 +100,11 @@ function renderBondRankings(rankings) {
     return;
   }
 
+  // <th class="action-column">상세</th> <--- 헤더에 상세보기 열 추가
   const tableHtml = `
     <div class="ranking-table-container">
       <table class="ranking-table">
-        <thead><tr><th>순위</th><th>조합</th><th>등급/세력</th><th>환산 점수</th></tr></thead>
+        <thead><tr><th>순위</th><th>조합</th><th>등급/세력</th><th>환산 점수</th><th class="action-column">상세</th></tr></thead>
         <tbody>
           ${rankings
             .map(
@@ -127,6 +131,9 @@ function renderBondRankings(rankings) {
                 )} | 세력: ${Math.round(
                 ranking.factionScore
               )} | 장착: ${Math.round(ranking.bindScore)})</div>
+              </td>
+              <td class="action-column">
+                <button class="btn btn-sm btn-info view-ranking-details" data-index="${index}">상세보기</button>
               </td>
             </tr>
           `
@@ -245,6 +252,8 @@ function initStatFilter() {
 function setupEventListeners() {
   elements.container.addEventListener("click", handleContainerClick);
   elements.statSelector.addEventListener("change", handleStatChange);
+  // <--- 새로 추가: 랭킹 컨테이너에 클릭 이벤트 위임 설정
+  elements.rankingsContainer.addEventListener("click", handleRankingAction); // <--- 이 라인 추가
 }
 
 /**
@@ -277,14 +286,51 @@ function handleContainerClick(e) {
     return;
   }
 
+  // 개별 환수 이미지/카드 클릭 시 (결속 랭킹의 이미지 or 능력치 랭킹의 카드)
+  // 상세보기 버튼 클릭과는 별개로 동작합니다.
   const spiritElement = e.target.closest(".spirit-image, .stat-card");
-  if (spiritElement) {
+  if (spiritElement && !e.target.classList.contains("view-ranking-details")) {
+    // <--- 상세보기 버튼 클릭과 중복 방지
     const spiritName = spiritElement.alt || spiritElement.dataset.spiritName;
     const spiritData = globalState.allSpirits.find(
       (s) => s.name === spiritName
     );
     if (spiritData) {
       showSpiritInfoModal(spiritData, null, true);
+    }
+  }
+}
+
+/**
+ * 랭킹 컨테이너 내에서 발생하는 클릭 이벤트를 처리합니다. (상세보기 버튼 등)
+ * @param {Event} e - 클릭 이벤트 객체
+ */
+function handleRankingAction(e) {
+  const target = e.target;
+  if (target.classList.contains("view-ranking-details")) {
+    const index = parseInt(target.dataset.index, 10);
+    const selectedRankingData = pageState.currentLoadedRankings[index];
+
+    if (selectedRankingData) {
+      const dataForModal = {
+        combination: selectedRankingData.spirits,
+        gradeScore: selectedRankingData.gradeScore,
+        factionScore: selectedRankingData.factionScore,
+        bindScore: selectedRankingData.bindScore,
+        gradeEffects: selectedRankingData.gradeEffects, // <-- 이 값이 무엇인지 확인
+        factionEffects: selectedRankingData.factionEffects, // <-- 이 값이 무엇인지 확인
+        bindStats:
+          selectedRankingData.bindStats || selectedRankingData.bindStat, // <-- 이 값이 무엇인지 확인
+        spirits: selectedRankingData.spirits,
+      };
+      console.log(
+        "Debug: DataForModal contents for Ranking Details:",
+        dataForModal
+      );
+      showOptimalResultModal(dataForModal, true);
+    } else {
+      console.error("랭킹 상세 데이터를 찾을 수 없습니다:", index);
+      alert("랭킹 상세 정보를 불러오는 데 실패했습니다.");
     }
   }
 }
@@ -336,7 +382,9 @@ export function getHelpContentHTML() {
                 <li><strong>카테고리 선택:</strong> '수호', '탑승', '변신' 탭을 클릭하여 해당 종류의 환수 랭킹을 확인하세요.</li>
                 <li><strong>랭킹 종류 선택:</strong> '결속 랭킹' 또는 '능력치 랭킹' 중 원하는 랭킹 기준을 선택하세요.
                     <ul>
-                        <li><strong>결속 랭킹:</strong> 등급, 세력, 장착 효과를 종합한 '환산 점수'를 기준으로 5마리 환수 조합의 순위를 보여줍니다. 각 조합의 구성 환수, 등급/세력 시너지, 점수 상세 내역을 확인할 수 있습니다.</li>
+                        <li><strong>결속 랭킹:</strong> 등급, 세력, 장착 효과를 종합한 '환산 점수'를 기준으로 5마리 환수 조합의 순위를 보여줍니다. 각 조합의 구성 환수, 등급/세력 시너지, 점수 상세 내역을 확인할 수 있습니다.
+                            <br>👉 <strong>'상세보기' 버튼</strong>을 클릭하여 해당 조합의 모든 능력치 합계 및 개별 환수의 장착 효과를 '결속 결과' 모달과 동일하게 확인할 수 있습니다.
+                        </li>
                         <li><strong>능력치 랭킹:</strong> 특정 능력치(예: '피해저항관통', '대인방어%')를 가장 높게 올려주는 환수의 순위를 보여줍니다.</li>
                     </ul>
                 </li>
@@ -368,6 +416,13 @@ export function cleanup() {
   }
   if (elements.statSelector) {
     elements.statSelector.removeEventListener("change", handleStatChange);
+  }
+  // <--- 새로 추가: 이벤트 리스너 제거
+  if (elements.rankingsContainer) {
+    elements.rankingsContainer.removeEventListener(
+      "click",
+      handleRankingAction
+    );
   }
   console.log("환수 랭킹 페이지 정리 완료.");
 }

@@ -1,3 +1,5 @@
+// js/resultModal.js
+
 import { createElement } from "./utils.js";
 import { getHistoryForCategory } from "./historyManager.js";
 import { state as globalState } from "./state.js";
@@ -5,7 +7,6 @@ import { FACTION_ICONS, STATS_MAPPING, PERCENT_STATS } from "./constants.js";
 
 let activeModal = null;
 
-// 강조할 주요 스탯과 해당 CSS 클래스 매핑
 const SPECIAL_STAT_CLASSES = {
   damageResistance: "stat-damage-resistance",
   damageResistancePenetration: "stat-damage-resistance-penetration",
@@ -18,6 +19,67 @@ function ensureNumber(value) {
   const num = parseFloat(String(value).replace(/,/g, ""));
   return isNaN(num) ? 0 : num;
 }
+
+// --- renderEffects 함수 재추가 시작 ---
+/**
+ * 특정 효과 섹션 (등급, 세력, 장착)을 렌더링합니다.
+ * @param {string} elementId - 효과가 렌더링될 DOM 요소의 ID
+ * @param {string} title - 섹션 제목
+ * @param {Array<object>} effects - 표시할 효과 데이터 배열 (예: [{key: "damage", name: "피해", value: 10}])
+ * @param {number} score - 해당 섹션의 총 점수
+ * @param {object} [counts={}] - 등급 또는 세력별 카운트 정보 (세트 효과 표시용)
+ */
+function renderEffects(elementId, title, effects, score, counts = {}) {
+  const container = document.getElementById(elementId);
+  if (!container) return;
+
+  let setInfoHtml = "";
+  if (counts.gradeCounts) {
+    setInfoHtml = Object.entries(counts.gradeCounts)
+      .filter(([, count]) => count >= 2)
+      .map(
+        ([grade, count]) =>
+          `<span class="grade-tag grade-tag-${
+            grade === "전설" ? "legend" : "immortal"
+          }">${grade}x${count}</span>`
+      )
+      .join(" ");
+  } else if (counts.factionCounts) {
+    setInfoHtml = Object.entries(counts.factionCounts)
+      .filter(([, count]) => count >= 2)
+      .map(([faction, count]) => {
+        const iconPath = FACTION_ICONS[faction] || "";
+        return `<span class="faction-tag" title="${faction}"><img src="${iconPath}" class="faction-icon" alt="${faction}">x${count}</span>`;
+      })
+      .join(" ");
+  }
+
+  // effects가 유효한 배열이 아니면 빈 배열로 처리하여 오류 방지
+  const validEffects = Array.isArray(effects) ? effects : [];
+
+  let effectsListHtml = '<p class="no-effects">효과 없음</p>';
+  if (validEffects.length > 0) {
+    effectsListHtml = `<ul class="effects-list">${validEffects
+      .map((stat) => {
+        const isPercent = PERCENT_STATS.includes(stat.key);
+        const displayValue = isPercent
+          ? `${ensureNumber(stat.value)}%`
+          : ensureNumber(stat.value).toLocaleString();
+        const highlightClass = SPECIAL_STAT_CLASSES[stat.key] || "";
+        return `<li class="${highlightClass}"><span class="stat-name">${stat.name}</span><span class="stat-value">${displayValue}</span></li>`;
+      })
+      .join("")}</ul>`;
+  }
+
+  container.innerHTML = `
+        <h4>${title} <span class="section-score">${Math.round(
+    ensureNumber(score)
+  )}</span></h4>
+        ${setInfoHtml ? `<div class="set-info">${setInfoHtml}</div>` : ""}
+        <div class="effects-content">${effectsListHtml}</div>
+    `;
+}
+// --- renderEffects 함수 재추가 종료 ---
 
 function createBaseModal() {
   removeAllModals();
@@ -49,7 +111,12 @@ function createBaseModal() {
   return { modal, content };
 }
 
-export function showResultModal(result) {
+/**
+ * 최적 조합 결과를 모달로 표시합니다.
+ * @param {object} result - 결속 계산 결과 또는 랭킹 상세 데이터
+ * @param {boolean} [isFromRanking=false] - 랭킹 페이지에서 호출되었는지 여부. true일 경우 기록 탭을 숨깁니다.
+ */
+export function showResultModal(result, isFromRanking = false) {
   if (
     !result ||
     !Array.isArray(result.combination) ||
@@ -61,20 +128,23 @@ export function showResultModal(result) {
   const { modal, content } = createBaseModal();
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
-  renderResultContent(result, content);
+  renderResultContent(result, content, isFromRanking);
 }
 
-function renderResultContent(result, container) {
-  container.innerHTML = "";
+/**
+ * 모달의 콘텐츠를 렌더링합니다.
+ * @param {object} result - 결속 계산 결과 또는 랭킹 상세 데이터
+ * @param {HTMLElement} container - 콘텐츠가 렌더링될 DOM 요소
+ * @param {boolean} isFromRanking - 랭킹 페이지에서 호출되었는지 여부
+ */
+function renderResultContent(result, container, isFromRanking) {
+  container.innerHTML = ""; // 기존 내용 초기화
 
   const closeButton = createElement("button", "modal-close", { text: "✕" });
   closeButton.onclick = removeAllModals;
 
   const headerDiv = createElement("div", "optimal-header", {
     id: "optimalHeader",
-  });
-  const historyContainer = createElement("div", "history-tabs-container", {
-    id: "historyContainer",
   });
   const combinationContainer = createElement(
     "div",
@@ -91,20 +161,48 @@ function renderResultContent(result, container) {
     id: "optimalSpiritsDetails",
   });
 
-  container.append(
-    closeButton,
-    headerDiv,
-    historyContainer,
-    combinationContainer,
-    resultsContainer,
-    detailsContainer
-  );
+  // 필수 요소 먼저 추가
+  container.append(closeButton, headerDiv);
 
-  updateResultView(result);
-  renderHistoryTabs(result.spirits[0].type);
+  // isFromRanking이 false일 때만 historyContainer를 생성하고 추가합니다.
+  if (!isFromRanking) {
+    const historyContainer = createElement("div", "history-tabs-container", {
+      id: "historyContainer",
+    });
+    container.appendChild(historyContainer);
+  }
+
+  // 나머지 주요 콘텐츠 컨테이너 추가
+  container.append(combinationContainer, resultsContainer, detailsContainer);
+
+  // UI 업데이트 함수 호출 (isFromRanking 전달)
+  updateResultView(result, isFromRanking);
+
+  // isFromRanking이 false일 때만 기록 탭을 렌더링합니다.
+  if (!isFromRanking) {
+    // result.spirits가 비어있을 경우 오류 방지
+    if (result.spirits && result.spirits.length > 0 && result.spirits[0].type) {
+      renderHistoryTabs(result.spirits[0].type);
+    } else {
+      console.warn(
+        "History cannot be rendered: missing spirit type in result.",
+        result
+      );
+      // 기록 탭이 존재한다면, 빈 메시지라도 표시
+      const historyContainer = document.getElementById("historyContainer");
+      if (historyContainer) {
+        historyContainer.innerHTML = `<p class="no-history-message">기록을 불러올 수 없습니다.</p>`;
+      }
+    }
+  }
 }
 
-function updateResultView(result) {
+/**
+ * 모달 뷰의 데이터를 업데이트합니다.
+ * @param {object} result - 결속 계산 결과 또는 랭킹 상세 데이터
+ * @param {boolean} isFromRanking - 랭킹 페이지에서 호출되었는지 여부 (히스토리 탭 렌더링에 사용)
+ */
+function updateResultView(result, isFromRanking) {
   const {
     gradeScore,
     factionScore,
@@ -141,9 +239,7 @@ function updateResultView(result) {
                 <div class="spirit-info-item" title="${spirit.name} (Lv.${
               spirit.level || 25
             })">
-                    <img src="${spirit.image}" alt="${
-              spirit.name
-            }"> <!-- 여기 수정! 선행 슬래시 제거 -->
+                    <img src="${spirit.image}" alt="${spirit.name}">
                     <div class="spirit-info-details">
                         <div class="spirit-info-name">${spirit.name}</div>
                         <div class="spirit-info-level">Lv.${
@@ -156,79 +252,32 @@ function updateResultView(result) {
         </div>
     `;
 
-  const gradeCounts = spirits.reduce((acc, spirit) => {
-    acc[spirit.grade] = (acc[spirit.grade] || 0) + 1;
-    return acc;
-  }, {});
-  const factionCounts = spirits.reduce((acc, spirit) => {
-    if (spirit.influence)
-      acc[spirit.influence] = (acc[spirit.influence] || 0) + 1;
-    return acc;
-  }, {});
-
+  // renderEffects 호출 시 bindStats (또는 bindStat) 데이터를 그대로 사용
   renderEffects("optimalGradeEffects", "등급 효과", gradeEffects, gradeScore, {
-    gradeCounts,
+    gradeCounts: spirits.reduce((acc, s) => {
+      acc[s.grade] = (acc[s.grade] || 0) + 1;
+      return acc;
+    }, {}),
   });
   renderEffects(
     "optimalFactionEffects",
     "세력 효과",
     factionEffects,
     factionScore,
-    { factionCounts }
+    {
+      factionCounts: spirits.reduce((acc, s) => {
+        if (s.influence) acc[s.influence] = (acc[s.influence] || 0) + 1;
+        return acc;
+      }, {}),
+    }
   );
   renderEffects("optimalBindEffects", "장착 효과", bindStats, bindScore);
 
+  // 모달 하단 상세 테이블 (spirits 데이터 활용)
   renderSpiritDetailsTable(spirits);
 }
 
-function renderEffects(elementId, title, effects, score, counts = {}) {
-  const container = document.getElementById(elementId);
-  if (!container) return;
-
-  let setInfoHtml = "";
-  if (counts.gradeCounts) {
-    setInfoHtml = Object.entries(counts.gradeCounts)
-      .filter(([, count]) => count >= 2)
-      .map(
-        ([grade, count]) =>
-          `<span class="grade-tag grade-tag-${
-            grade === "전설" ? "legend" : "immortal"
-          }">${grade}x${count}</span>`
-      )
-      .join(" ");
-  } else if (counts.factionCounts) {
-    setInfoHtml = Object.entries(counts.factionCounts)
-      .filter(([, count]) => count >= 2)
-      .map(([faction, count]) => {
-        const iconPath = FACTION_ICONS[faction] || "";
-        return `<span class="faction-tag" title="${faction}"><img src="${iconPath}" class="faction-icon" alt="${faction}">x${count}</span>`;
-      })
-      .join(" ");
-  }
-
-  let effectsListHtml = '<p class="no-effects">효과 없음</p>';
-  if (effects && Array.isArray(effects) && effects.length > 0) {
-    effectsListHtml = `<ul class="effects-list">${effects
-      .map((stat) => {
-        const isPercent = PERCENT_STATS.includes(stat.key);
-        const displayValue = isPercent
-          ? `${ensureNumber(stat.value)}%`
-          : ensureNumber(stat.value).toLocaleString();
-        const highlightClass = SPECIAL_STAT_CLASSES[stat.key] || "";
-        return `<li class="${highlightClass}"><span class="stat-name">${stat.name}</span><span class="stat-value">${displayValue}</span></li>`;
-      })
-      .join("")}</ul>`;
-  }
-
-  container.innerHTML = `
-        <h4>${title} <span class="section-score">${Math.round(
-    ensureNumber(score)
-  )}</span></h4>
-        ${setInfoHtml ? `<div class="set-info">${setInfoHtml}</div>` : ""}
-        <div class="effects-content">${effectsListHtml}</div>
-    `;
-}
-
+// --- renderHistoryTabs 함수 ---
 function renderHistoryTabs(category) {
   const history = getHistoryForCategory(category);
   const container = document.getElementById("historyContainer");
@@ -299,12 +348,13 @@ function renderHistoryTabs(category) {
       const clickedId = parseInt(tab.dataset.historyId, 10);
       const selectedEntry = history.find((entry) => entry.id === clickedId);
       if (selectedEntry) {
-        updateResultView(selectedEntry);
+        updateResultView(selectedEntry, false); // <--- 여기도 isFromRanking을 false로 전달
       }
     });
   });
 }
 
+// --- renderSpiritDetailsTable 함수 ---
 function renderSpiritDetailsTable(spirits) {
   const container = document.getElementById("optimalSpiritsDetails");
   if (!container) return;
@@ -394,6 +444,7 @@ function renderSpiritDetailsTable(spirits) {
   container.innerHTML = tableHtml;
 }
 
+// --- removeAllModals 함수 ---
 export function removeAllModals() {
   if (activeModal) {
     document.removeEventListener("keydown", activeModal._escListener);

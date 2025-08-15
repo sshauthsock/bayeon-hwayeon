@@ -432,7 +432,7 @@ async function handleFindOptimal() {
       throw new Error("API에서 유효한 응답을 받지 못했습니다.");
     }
     addHistory(result);
-    showOptimalResultModal(result);
+    showOptimalResultModal(result, false);
   } catch (error) {
     alert(`계산 오류: ${error.message}`);
     console.error("Optimal combination calculation failed:", error);
