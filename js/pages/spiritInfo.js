@@ -1,20 +1,22 @@
+// js/pages/spiritInfo.js
+
 import { state as globalState } from "../state.js";
 import {
   createElement,
   checkSpiritStats,
   checkItemForStatEffect,
-} from "../utils.js"; // checkSpiritStats, checkItemForStatEffect 임포트
+} from "../utils.js";
 import { showInfo as showSpiritInfoModal } from "../modalHandler.js";
 import { renderSpiritGrid } from "../components/spritGrid.js";
-import { createStatFilter } from "../components/statFilter.js"; // 새로 생성할 statFilter 컴포넌트 임포트
+import { createStatFilter } from "../components/statFilter.js";
 import { INFLUENCE_ROWS, STATS_MAPPING } from "../constants.js";
 
 const pageState = {
-  currentCategory: "수호", // 현재 선택된 환수 카테고리 (수호, 탑승, 변신)
-  groupByInfluence: false, // 세력별로 그룹화할지 여부
-  currentStatFilter: "", // 현재 적용된 스탯 필터 키
+  currentCategory: "수호",
+  groupByInfluence: false,
+  currentStatFilter: "",
 };
-const elements = {}; // DOM 요소 참조를 저장할 객체
+const elements = {};
 
 /**
  * 페이지의 기본 HTML 구조를 반환합니다.
@@ -32,9 +34,10 @@ function getHTML() {
             <span class="slider round"></span>
         </label>
         <span class="toggle-label">세력별 보기</span>
-        <div class="stat-filter-container"></div> <!-- 스탯 필터가 렌더링될 곳 -->
+        <div class="stat-filter-container"></div>
     </div>
-    <div id="spiritGridContainer"></div>`;
+    <div id="spiritGridContainer"></div>
+    `;
 }
 
 /**
@@ -44,8 +47,8 @@ function getHTML() {
  */
 function extractNumberFromImage(imagePath) {
   if (!imagePath) return Infinity;
-  const match = imagePath.match(/\d+/); // 경로에서 숫자 매칭
-  return match ? parseInt(match[0], 10) : Infinity; // 숫자가 있으면 파싱, 없으면 Infinity
+  const match = imagePath.match(/\d+/);
+  return match ? parseInt(match[0], 10) : Infinity;
 }
 
 /**
@@ -53,22 +56,20 @@ function extractNumberFromImage(imagePath) {
  * 필터 및 그룹화 설정에 따라 다르게 표시됩니다.
  */
 function render() {
-  let spiritsToDisplay = getSpiritsForCurrentState(); // 현재 카테고리에 맞는 환수 가져오기
+  let spiritsToDisplay = getSpiritsForCurrentState();
 
   if (pageState.currentStatFilter) {
-    // 스탯 필터가 적용되어 있다면 필터링
     spiritsToDisplay = spiritsToDisplay.filter((spirit) =>
       checkItemForStatEffect(spirit, pageState.currentStatFilter)
     );
   }
 
-  // spiritGrid 컴포넌트를 사용하여 환수 그리드 렌더링
   renderSpiritGrid({
     container: elements.spiritGridContainer,
     spirits: spiritsToDisplay,
-    onSpiritClick: handleSpiritClick, // 환수 클릭 시 모달 표시
-    getSpiritState: getSpiritVisualState, // 각 환수의 시각적 상태 반환 (강조 효과 등)
-    groupByInfluence: pageState.groupByInfluence, // 세력별 그룹화 여부
+    onSpiritClick: handleSpiritClick,
+    getSpiritState: getSpiritVisualState,
+    groupByInfluence: pageState.groupByInfluence,
   });
 }
 
@@ -78,7 +79,7 @@ function render() {
  */
 function handleSpiritClick(spirit) {
   if (spirit) {
-    showSpiritInfoModal(spirit, pageState.currentStatFilter); // 모달 표시 (현재 스탯 필터도 전달하여 강조 가능)
+    showSpiritInfoModal(spirit, pageState.currentStatFilter);
   }
 }
 
@@ -88,14 +89,13 @@ function handleSpiritClick(spirit) {
  * @returns {object} 환수의 시각적 상태를 나타내는 객체
  */
 function getSpiritVisualState(spirit) {
-  // `utils.js`에서 가져온 `checkSpiritStats` 함수를 사용하여 등록/장착 완료 여부 확인
   const { hasFullRegistration, hasFullBind, hasLevel25Bind } =
     checkSpiritStats(spirit);
   return {
-    selected: false, // 이 페이지에서는 선택 기능이 없으므로 항상 false
-    registrationCompleted: hasFullRegistration, // 등록 효과 완료 여부
-    bondCompleted: hasFullBind, // 장착 효과 완료 여부
-    level25BindAvailable: hasLevel25Bind, // 25레벨 장착 효과 존재 여부 (오른쪽 상단 표시용)
+    selected: false,
+    registrationCompleted: hasFullRegistration,
+    bondCompleted: hasFullBind,
+    level25BindAvailable: hasLevel25Bind,
   };
 }
 
@@ -107,12 +107,12 @@ function getSpiritsForCurrentState() {
   const filteredSpirits = globalState.allSpirits.filter(
     (s) => s.type === pageState.currentCategory
   );
-  const gradeOrder = { 전설: 1, 불멸: 2 }; // 등급 정렬 순서 정의
+  const gradeOrder = { 전설: 1, 불멸: 2 };
   filteredSpirits.sort((a, b) => {
     const orderA = gradeOrder[a.grade] || 99;
     const orderB = gradeOrder[b.grade] || 99;
-    if (orderA !== orderB) return orderA - orderB; // 등급 우선 정렬
-    return extractNumberFromImage(a.image) - extractNumberFromImage(b.image); // 같은 등급 내에서는 이미지 이름의 숫자 순으로 정렬
+    if (orderA !== orderB) return orderA - orderB;
+    return extractNumberFromImage(a.image) - extractNumberFromImage(b.image);
   });
   return filteredSpirits;
 }
@@ -123,11 +123,10 @@ function getSpiritsForCurrentState() {
 function handleContainerClick(e) {
   const tab = e.target.closest(".sub-tabs .tab");
   if (tab && !tab.classList.contains("active")) {
-    // 탭 변경 시
     elements.subTabs.querySelector(".tab.active").classList.remove("active");
     tab.classList.add("active");
-    pageState.currentCategory = tab.dataset.category; // 현재 카테고리 업데이트
-    render(); // UI 재렌더링
+    pageState.currentCategory = tab.dataset.category;
+    render();
   }
 }
 
@@ -135,8 +134,8 @@ function handleContainerClick(e) {
  * '세력별 보기' 토글 변경 이벤트를 처리합니다.
  */
 function handleToggleChange(e) {
-  pageState.groupByInfluence = e.target.checked; // 토글 상태 업데이트
-  render(); // UI 재렌더링 (그리드 방식 변경)
+  pageState.groupByInfluence = e.target.checked;
+  render();
 }
 
 /**
@@ -146,10 +145,9 @@ function initStatFilter() {
   const filterContainer = elements.viewToggleContainer.querySelector(
     ".stat-filter-container"
   );
-  // `createStatFilter` 컴포넌트를 사용하여 스탯 필터 UI 생성 및 관리
   createStatFilter(filterContainer, globalState.allSpirits, (newStatKey) => {
-    pageState.currentStatFilter = newStatKey; // 필터 상태 업데이트
-    render(); // 환수 목록 재렌더링 (필터 적용)
+    pageState.currentStatFilter = newStatKey;
+    render();
   });
 }
 
@@ -158,9 +156,8 @@ function initStatFilter() {
  * @param {HTMLElement} container - 페이지 내용이 렌더링될 DOM 요소
  */
 export function init(container) {
-  container.innerHTML = getHTML(); // 페이지 HTML 삽입
+  container.innerHTML = getHTML();
 
-  // DOM 요소 참조 저장
   elements.container = container;
   elements.subTabs = container.querySelector("#spiritInfoSubTabs");
   elements.influenceToggle = container.querySelector("#influenceToggle");
@@ -171,18 +168,39 @@ export function init(container) {
     "#spiritGridContainer"
   );
 
-  // 이벤트 리스너 설정
   elements.container.addEventListener("click", handleContainerClick);
   elements.influenceToggle.addEventListener("change", handleToggleChange);
 
-  initStatFilter(); // 스탯 필터 초기화
-  render(); // 초기 렌더링
+  initStatFilter();
+
+  render();
   console.log("환수 정보 페이지 초기화 완료.");
 }
 
 /**
+ * 이 페이지에 대한 도움말 콘텐츠 HTML을 반환합니다.
+ * main.js에서 호출하여 도움말 툴팁에 주입됩니다.
+ */
+export function getHelpContentHTML() {
+  return `
+        <div class="content-block">
+            <h2>환수 정보 사용 안내</h2>
+            <p>환수를 클릭하시면 해당 환수의 <strong>장착 정보</strong>와 <strong>결속 정보</strong>를 상세히 확인하실 수 있습니다.</p>
+            <p>또한, <strong>환산 합산</strong>은 다음과 같이 계산됩니다: 피해저항 + 피해저항관통 + (대인피해% * 10) + (대인방어% * 10).</p>
+
+            <h3>🔎 페이지 기능 설명</h3>
+            <ul>
+                <li><strong>카테고리 선택:</strong> 상단의 '수호', '탑승', '변신' 탭을 클릭하여 원하는 환수 종류의 정보를 확인하세요.</li>
+                <li><strong>세력별 보기:</strong> '세력별 보기' 토글을 켜면 환수들을 소속 세력(결의, 고요 등)별로 그룹화하여 볼 수 있습니다. 세력 시너지를 파악하는 데 유용합니다.</li>
+                <li><strong>능력치 필터:</strong> 특정 능력치(예: '피해저항관통', '치명위력%')를 가진 환수만 보고 싶을 때 사용하세요. 드롭다운에서 원하는 스탯을 선택하거나 검색하여 필터링할 수 있습니다.</li>
+                <li><strong>환수 클릭:</strong> 목록에서 원하는 환수를 클릭하면 해당 환수의 상세 능력치, 등록 및 장착 효과, 그리고 레벨별 스탯 변화를 모달 창으로 확인할 수 있습니다.</li>
+            </ul>
+        </div>
+    `;
+}
+
+/**
  * 페이지 정리 함수.
- * 페이지 전환 시 불필요한 이벤트 리스너 등을 제거하여 메모리 누수를 방지합니다.
  */
 export function cleanup() {
   if (elements.container) {
@@ -191,7 +209,5 @@ export function cleanup() {
   if (elements.influenceToggle) {
     elements.influenceToggle.removeEventListener("change", handleToggleChange);
   }
-  // statFilter 컴포넌트에 cleanup 함수가 있다면 호출
-  // if (elements.statFilterComponent?.cleanup) { elements.statFilterComponent.cleanup(); }
   console.log("환수 정보 페이지 정리 완료.");
 }

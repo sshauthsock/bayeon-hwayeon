@@ -2026,23 +2026,40 @@ table {
     justify-content: center;
     flex-wrap: wrap;
     margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid #444;
 }
 
-.footer-links a {
-    color: #9e9e9e;
-    text-decoration: none;
-    margin: 0 var(--space-sm);
-    padding: var(--radius-sm) 0;
-}
-
-.footer-copyright {
-    border-top: 1px solid #444;
+.footer-info {
     padding-top: var(--space-sm);
+    text-align: center;
+    font-size: var(--text-sm);
+    color: #9e9e9e;
+    line-height: 1.8;
 }
 
-.footer-copyright p {
+.footer-info p {
     margin: 0;
+}
+
+.footer-info a {
     color: #9e9e9e;
+    text-decoration: underline;
+}
+
+.footer-report-btn {
+    background-color: #444;
+    color: var(--text-white);
+    border: none;
+    padding: var(--radius-sm) 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0 4px;
+    transition: background-color 0.3s ease;
+}
+
+.footer-report-btn:hover {
+    background-color: #555;
 }
 
 .footer-copyright a {
@@ -2644,8 +2661,11 @@ input:checked+.toggle-slider:before {
 .help-container {
     position: fixed;
     bottom: 80px;
+    /* 푸터 위로 띄움 */
     right: var(--space-lg);
+    /* 오른쪽 여백 */
     z-index: var(--z-fixed);
+    /* 다른 요소 위에 표시 */
 }
 
 .help-btn {
@@ -2674,126 +2694,215 @@ input:checked+.toggle-slider:before {
     display: inline-block;
 }
 
+/* --- help-tooltip 스타일 변경 시작 --- */
 .help-tooltip {
-    position: absolute;
-    bottom: 50px;
-    right: 0;
-    width: 280px;
+    position: fixed;
+    /* 화면에 고정된 위치로 오버레이 */
+    bottom: 60px;
+    /* help-btn 바로 위 (버튼 높이 + 여백) */
+    right: var(--space-lg);
+    /* 오른쪽 여백 */
+    width: 450px;
+    /* 모달의 가로 폭 조정 (기존 280px에서 확장) */
+    max-height: 80vh;
+    /* 화면 높이의 최대 80% 사용 */
     background: var(--bg-white);
     border-radius: var(--radius-md);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    padding: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    /* 더 부드러운 그림자 */
+    padding: 0;
+    /* 내부 콘텐츠가 패딩을 가집니다 */
     display: none;
+    /* 기본적으로 숨김 */
     z-index: var(--z-tooltip);
+    /* 다른 UI 요소 위에 표시 */
+    overflow-y: auto;
+    /* 내용이 길어지면 세로 스크롤 가능 */
     transform-origin: bottom right;
+    /* 팝업 애니메이션 기준점 */
     animation: pop-in 0.3s;
+    /* 팝업 애니메이션 적용 */
+    box-sizing: border-box;
+    /* 패딩과 보더가 너비에 포함되도록 */
+}
+
+.help-content {
+    padding: var(--space-md);
+    /* 모달 내부 콘텐츠의 기본 패딩 */
 }
 
 .help-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-sm);
-    border-bottom: 1px solid #eee;
+    margin-bottom: var(--space-md);
+    /* 헤더와 본문 사이 간격 */
     padding-bottom: var(--space-sm);
+    /* 제목과 구분선 사이 패딩 */
+    border-bottom: 1px solid #eee;
+    /* 헤더 구분선 */
 }
 
 .help-header h3 {
     margin: 0;
-    font-size: var(--text-lg);
-    color: #333;
+    /* 기본 마진 제거 */
+    font-size: var(--text-xl);
+    /* 헤더 제목 크기 조정 */
+    color: var(--text-primary);
     border-bottom: none;
+    /* 이중 보더 방지 */
     padding-bottom: 0;
+    /* 이중 패딩 방지 */
 }
 
 .close-help {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 24px;
+    /* 닫기 버튼 크기 조정 */
     cursor: pointer;
     color: #666;
+    transition: var(--transition-fast);
 }
 
-.help-list {
-    margin: 0;
-    padding-left: var(--space-md);
+.close-help:hover {
+    color: var(--color-danger);
+    /* 닫기 버튼 호버 색상 */
 }
 
-.help-list li {
-    margin-bottom: var(--space-sm);
-    font-size: var(--text-sm);
-    line-height: 1.5;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
+/* 동적으로 주입되는 콘텐츠 블록의 기본 스타일 재정의 */
+.help-tooltip .content-block {
+    background-color: transparent;
+    /* 툴팁 내에서는 배경색 없음 */
+    box-shadow: none;
+    /* 툴팁 내에서는 그림자 없음 */
+    border-radius: 0;
+    /* 툴팁 내에서는 모서리 둥글게 없음 */
+    padding: 0;
+    /* 툴팁 내에서는 추가 패딩 없음 */
+    margin-bottom: 0;
+    /* 불필요한 하단 마진 제거 */
 }
 
-.tip-container {
-    right: 60px;
+/* 툴팁 내 텍스트 가독성 향상 및 계층 구조 명확화 */
+.help-tooltip h2 {
+    font-size: var(--text-xxl);
+    /* 페이지 대제목 (예: "환수 정보 사용 안내") */
+    color: var(--color-primary-dark);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-primary);
 }
 
-.tip-btn {
-    background-color: #ff9800;
+.help-tooltip h3#currentHelpTitle {
+    /* help-header의 메인 제목 */
+    font-size: var(--text-xxl);
+    /* 가장 큰 제목 */
+    margin-bottom: 0;
+    /* help-header에서 이미 마진 설정됨 */
+    padding-bottom: 0;
+    /* help-header에서 이미 패딩 설정됨 */
+    border-bottom: none;
+    /* help-header에서 이미 구분선 있음 */
 }
 
-.tip-tooltip {
-    width: 350px;
+.help-tooltip h3 {
+    /* 섹션 소제목 (예: "🔎 페이지 기능 설명") */
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin-top: var(--space-lg);
+    /* 섹션 간격 */
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px dashed var(--border-medium);
+    /* 점선 구분 */
 }
 
-.tutorial-tip {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: var(--z-modal);
-}
-
-.tip-content {
-    background-color: var(--bg-white);
-    padding: var(--space-lg);
-    border-radius: var(--radius-md);
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-}
-
-.tip-content h4 {
-    color: var(--color-info);
-    margin-top: 0;
-    margin-bottom: var(--space-sm);
-}
-
-.tip-content p {
-    margin: var(--space-sm) 0;
-    color: var(--text-secondary);
+.help-tooltip h4 {
+    /* (만약 사용된다면) 더 작은 제목 */
     font-size: var(--text-md);
-    line-height: 1.5;
-}
-
-.close-tip-btn {
-    background-color: var(--color-info);
-    color: var(--text-white);
-    border: none;
-    padding: var(--space-sm) var(--space-md);
-    border-radius: 4px;
+    color: var(--text-primary);
     margin-top: var(--space-md);
-    cursor: pointer;
-    width: 100%;
-    min-height: 44px;
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px dashed var(--border-medium);
 }
 
-.close-tip-btn:hover {
-    background-color: var(--color-info-dark);
+.help-tooltip p {
+    font-size: var(--text-md);
+    line-height: 1.7;
+    /* 줄 간격 넓혀 가독성 향상 */
+    margin-bottom: var(--space-md);
 }
 
-.close-tip-btn:active {
-    background-color: #1e40af;
-    transform: scale(0.98);
+.help-tooltip ul {
+    list-style-type: disc;
+    /* 기본 원형 불릿 */
+    padding-left: var(--space-lg);
+    /* 왼쪽 패딩 */
+    margin-bottom: var(--space-md);
+}
+
+.help-tooltip ul li {
+    font-size: var(--text-md);
+    line-height: 1.6;
+    margin-bottom: var(--space-sm);
+}
+
+.help-tooltip strong {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .help-tooltip {
+        width: 90%;
+        /* 모바일에서는 너비를 더 크게 */
+        right: 5%;
+        /* 좌우 5% 마진으로 중앙 정렬 효과 */
+        left: 5%;
+        transform: translateX(0);
+        /* 필요시 translateX 초기화 */
+        bottom: 80px;
+        /* 푸터 버튼 위로 위치 */
+        max-height: 70vh;
+        /* 모바일에서 높이 조정 */
+        padding: var(--space-sm);
+        /* 모바일에서는 내부 패딩을 약간 줄임 */
+    }
+
+    .help-content {
+        padding: var(--space-sm);
+        /* 모바일 패딩 조정 */
+    }
+
+    /* 모바일에서 텍스트 크기 추가 조정 */
+    .help-tooltip h2 {
+        font-size: var(--text-xl);
+        margin-bottom: var(--space-md);
+    }
+
+    .help-tooltip h3#currentHelpTitle {
+        font-size: var(--text-xl);
+    }
+
+    .help-tooltip h3,
+    .help-tooltip h4 {
+        font-size: var(--text-md);
+        margin-top: var(--space-md);
+        margin-bottom: var(--space-sm);
+    }
+
+    .help-tooltip p,
+    .help-tooltip ul li {
+        font-size: var(--text-sm);
+        /* 모바일에서 본문 텍스트 크기 조정 */
+        margin-bottom: var(--space-sm);
+    }
+
+    .help-tooltip ul {
+        padding-left: var(--space-md);
+    }
 }
 
 /* Modals (General) */
@@ -5340,6 +5449,89 @@ tr.max-level {
     gap: 25px;
     max-width: 1400px;
     margin-bottom: var(--space-xl);
+}
+
+.info-content-section {
+    max-width: 1200px;
+    /* 사이트 전체 너비에 맞춤 */
+    margin: var(--space-xl) auto var(--space-xl) auto;
+    /* 위아래 간격, 좌우 자동 마진으로 중앙 정렬 */
+    padding: 0 var(--space-md);
+    /* 좌우 패딩 */
+    box-sizing: border-box;
+    /* 패딩 포함 너비 계산 */
+}
+
+.info-content-section .content-block {
+    background-color: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-xl);
+    /* 내부 패딩 */
+    line-height: 1.8;
+    /* 가독성을 위한 줄 간격 */
+    color: var(--text-secondary);
+}
+
+.info-content-section h2 {
+    font-size: var(--text-xxl);
+    color: var(--color-primary-dark);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.info-content-section h3 {
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px dashed var(--border-medium);
+}
+
+.info-content-section p {
+    margin-bottom: var(--space-md);
+}
+
+.info-content-section ul {
+    list-style-type: disc;
+    padding-left: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+
+.info-content-section ul li {
+    margin-bottom: var(--space-sm);
+    font-size: var(--text-md);
+}
+
+.info-content-section strong {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+/* 모바일 반응형 조정 */
+@media (max-width: 768px) {
+    .info-content-section {
+        margin: var(--space-lg) auto;
+        padding: 0 var(--space-sm);
+    }
+
+    .info-content-section .content-block {
+        padding: var(--space-lg);
+    }
+
+    .info-content-section h2 {
+        font-size: var(--text-xl);
+    }
+
+    .info-content-section h3 {
+        font-size: var(--text-md);
+    }
+
+    .info-content-section ul {
+        padding-left: var(--space-md);
+    }
 }
 
 .img-wrapper {

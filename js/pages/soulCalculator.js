@@ -1,3 +1,5 @@
+// js/pages/soulCalculator.js
+
 import { createElement } from "../utils.js";
 import { showLoading, hideLoading } from "../loadingIndicator.js";
 import * as api from "../api.js";
@@ -55,7 +57,7 @@ function getHTML() {
             </div>
             <div class="input-group">
               <label>목표:</label>
-              <input type="number" id="targetLevel" min="1" max="25" value="1" class="form-control"> <!-- max="25" 확인 -->
+              <input type="number" id="targetLevel" min="1" max="25" value="1" class="form-control">
             </div>
           </div>
           <div class="soul-panel">
@@ -98,7 +100,6 @@ function renderExpTable() {
   elements.expTableLeft.innerHTML = "";
   elements.expTableRight.innerHTML = "";
 
-  // 경험치 테이블을 좌우 두 개의 테이블로 분할하여 렌더링
   expData.forEach((exp, lv) => {
     const row = createElement("tr", "", {
       html: `<td>${lv}</td><td>${exp.toLocaleString()}</td>`,
@@ -124,19 +125,16 @@ function renderCalculationResult(result) {
   }
 
   const { required, maxLevelInfo } = result;
-  // 환수혼 종류에 대한 한글 이름
   const typeName =
     { legend: "전설", immortal: "불멸" }[pageState.currentType] || "알 수 없음";
 
-  const formatNumber = (num) => (Number(num) || 0).toLocaleString(); // 숫자 포맷팅 헬퍼
+  const formatNumber = (num) => (Number(num) || 0).toLocaleString();
 
-  // 필요 환수혼 섹션 렌더링
   const requiredSectionHtml = createRequiredSoulsSection(
     required,
     typeName,
     formatNumber
   );
-  // 도달 가능 레벨 섹션 렌더링
   const maxLevelSectionHtml = createMaxLevelInfoSection(
     maxLevelInfo,
     typeName,
@@ -151,7 +149,7 @@ function renderCalculationResult(result) {
             ${maxLevelSectionHtml}
         </div>
     `;
-  elements.resultsPanel.classList.remove("hidden"); // 결과 패널 표시
+  elements.resultsPanel.classList.remove("hidden");
 }
 
 /**
@@ -209,7 +207,6 @@ function createRequiredSoulsSection(required, typeName, formatNumber) {
  */
 function createMaxLevelInfoSection(maxLevelInfo, typeName, formatNumber) {
   let maxLevelProgressHtml = "";
-  // 최대 레벨이 아니면서 다음 레벨 경험치 정보가 있을 때만 진행도 표시
   if (
     maxLevelInfo.level < 25 &&
     maxLevelInfo.nextLevelExp !== undefined &&
@@ -261,7 +258,6 @@ function highlightTableRows() {
     "#expTableLeft tr, #expTableRight tr"
   );
 
-  // 모든 강조 표시 제거
   allRows.forEach((row) =>
     row.classList.remove("current-level", "target-level")
   );
@@ -269,11 +265,6 @@ function highlightTableRows() {
   const current = pageState.currentLevel;
   const target = pageState.targetLevel;
 
-  // 인덱스를 사용하여 해당 레벨 행을 강조 표시
-  // +1을 하는 이유는 경험치 테이블이 0레벨부터 시작하기 때문에, 테이블의 실제 행 인덱스와 맞추기 위함입니다.
-  // 예를 들어, 0레벨은 첫 번째 행 (index 0), 1레벨은 두 번째 행 (index 1)에 해당합니다.
-  // 이전에 `lv + 1`을 했다면 `current`와 `target`은 이미 표시하고자 하는 행 인덱스와 일치합니다.
-  // 현재 코드는 `lv` (레벨 숫자)가 테이블의 `lv` 열과 직접 매핑되므로, 인덱스를 직접 사용합니다.
   if (allRows[current]) allRows[current].classList.add("current-level");
   if (allRows[target]) allRows[target].classList.add("target-level");
 }
@@ -283,15 +274,14 @@ function highlightTableRows() {
  */
 function handleTypeChange(newType) {
   pageState.currentType = newType;
-  elements.expType.value = newType; // 드롭다운 값 업데이트
+  elements.expType.value = newType;
 
-  // 탭 활성화 상태 업데이트
   elements.container.querySelectorAll(".exp-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.type === newType);
   });
 
-  renderExpTable(); // 테이블 재렌더링
-  elements.resultsPanel.classList.add("hidden"); // 결과 패널 숨기기
+  renderExpTable();
+  elements.resultsPanel.classList.add("hidden");
 }
 
 /**
@@ -301,44 +291,38 @@ function validateInputs() {
   let current = parseInt(elements.currentLevel.value, 10);
   let target = parseInt(elements.targetLevel.value, 10);
 
-  // 현재 레벨 유효성 검사
   if (isNaN(current) || current < 0) current = 0;
-  if (current > 24) current = 24; // 최대 24레벨까지만 현재 레벨로 설정 가능
+  if (current > 24) current = 24;
 
-  // 목표 레벨 유효성 검사
   if (isNaN(target) || target < 1) target = 1;
-  if (target > 25) target = 25; // 최대 25레벨까지만 목표 레벨로 설정 가능
+  if (target > 25) target = 25;
 
-  // 목표 레벨이 현재 레벨보다 작거나 같을 경우 조정
   if (target <= current) {
     target = current + 1;
-    if (target > 25) target = 25; // 25를 초과하지 않도록
+    if (target > 25) target = 25;
   }
 
-  // DOM 값 업데이트 및 페이지 상태 업데이트
   elements.currentLevel.value = current;
   elements.targetLevel.value = target;
 
   pageState.currentLevel = current;
   pageState.targetLevel = target;
-  highlightTableRows(); // 테이블 강조 업데이트
-  elements.resultsPanel.classList.add("hidden"); // 결과 패널 숨기기
+  highlightTableRows();
+  elements.resultsPanel.classList.add("hidden");
 }
 
 /**
  * 계산 버튼 클릭 이벤트를 처리하고 백엔드에 계산 요청을 보냅니다.
  */
 async function handleCalculate() {
-  validateInputs(); // 입력값 유효성 검사
+  validateInputs();
 
-  // 보유 환수혼 개수 상태 업데이트
   pageState.souls = {
     high: parseInt(elements.highSoul.value, 10) || 0,
     mid: parseInt(elements.midSoul.value, 10) || 0,
     low: parseInt(elements.lowSoul.value, 10) || 0,
   };
 
-  // 계산 중 로딩 인디케이터 표시
   showLoading(
     elements.resultsPanel,
     "계산 중...",
@@ -346,20 +330,19 @@ async function handleCalculate() {
   );
 
   try {
-    // 백엔드 API 호출
     const result = await api.calculateSoul({
       type: pageState.currentType,
       currentLevel: pageState.currentLevel,
       targetLevel: pageState.targetLevel,
       ownedSouls: pageState.souls,
     });
-    renderCalculationResult(result); // 결과 렌더링
+    renderCalculationResult(result);
   } catch (error) {
     alert(`계산 오류: ${error.message}`);
     console.error("Soul calculation failed:", error);
-    elements.resultsPanel.classList.add("hidden"); // 오류 발생 시 패널 숨김
+    elements.resultsPanel.classList.add("hidden");
   } finally {
-    hideLoading(); // 로딩 인디케이터 숨김
+    hideLoading();
   }
 }
 
@@ -367,28 +350,23 @@ async function handleCalculate() {
  * 페이지의 모든 주요 이벤트 리스너를 설정합니다.
  */
 function setupEventListeners() {
-  // 환수혼 종류 드롭다운 변경 이벤트
   elements.expType.addEventListener("change", (e) =>
     handleTypeChange(e.target.value)
   );
 
-  // 환수혼 종류 탭 클릭 이벤트
   elements.container.querySelectorAll(".exp-tab").forEach((tab) => {
     tab.addEventListener("click", (e) => {
       handleTypeChange(e.currentTarget.dataset.type);
     });
   });
 
-  // 현재 레벨 및 목표 레벨 입력 변경 이벤트
   elements.currentLevel.addEventListener("change", validateInputs);
   elements.targetLevel.addEventListener("change", validateInputs);
 
-  // 보유 환수혼 입력 변경 이벤트 (실시간 반영은 아니므로 change 이벤트만)
   elements.highSoul.addEventListener("change", handleCalculate);
   elements.midSoul.addEventListener("change", handleCalculate);
   elements.lowSoul.addEventListener("change", handleCalculate);
 
-  // 계산 버튼 클릭 이벤트
   elements.calculateBtn.addEventListener("click", handleCalculate);
 }
 
@@ -397,9 +375,8 @@ function setupEventListeners() {
  * @param {HTMLElement} container - 페이지 내용이 렌더링될 DOM 요소
  */
 export async function init(container) {
-  container.innerHTML = getHTML(); // 페이지 HTML 삽입
+  container.innerHTML = getHTML();
 
-  // DOM 요소 참조 저장
   elements.container = container;
   elements.expTableLeft = container.querySelector("#expTableLeft");
   elements.expTableRight = container.querySelector("#expTableRight");
@@ -412,14 +389,13 @@ export async function init(container) {
   elements.calculateBtn = container.querySelector("#calculateBtn");
   elements.resultsPanel = container.querySelector("#resultsPanel");
 
-  setupEventListeners(); // 이벤트 리스너 설정
+  setupEventListeners();
 
-  // 경험치 테이블 로드 및 렌더링
   showLoading(container, "경험치 테이블 로딩 중...");
   try {
     pageState.expTable = await api.fetchSoulExpTable();
     renderExpTable();
-    validateInputs(); // 초기값으로 유효성 검사 및 하이라이트
+    validateInputs();
   } catch (error) {
     console.error("Failed to load soul exp table:", error);
     container.innerHTML = `<p class="error-message">경험치 데이터를 불러오는 데 실패했습니다: ${error.message}</p>`;
@@ -431,10 +407,43 @@ export async function init(container) {
 }
 
 /**
+ * 이 페이지에 대한 도움말 콘텐츠 HTML을 반환합니다.
+ * main.js에서 호출하여 도움말 툴팁에 주입됩니다.
+ */
+export function getHelpContentHTML() {
+  return `
+        <div class="content-block">
+            <h2>환수혼 계산기 사용 안내</h2>
+            <p>환수혼 계산기는 보유한 환수혼(최상급, 상급, 하급)을 기준으로 특정 환수 레벨까지 도달하는 데 필요한 경험치와 환수혼 개수를 계산해줍니다. 또한, 보유 환수혼으로 얼마나 레벨업 할 수 있는지도 알려드립니다.</p>
+
+            <h3>🔎 페이지 기능 설명</h3>
+            <ul>
+                <li><strong>환수 성장 경험치 테이블:</strong> 좌측에서 전설/불멸 환수 종류별 레벨업에 필요한 총 경험치를 한눈에 확인할 수 있습니다. 현재 레벨과 목표 레벨에 해당하는 행은 색상으로 강조됩니다.</li>
+                <li><strong>환수혼 종류:</strong> '전설' 또는 '불멸' 중 육성하려는 환수의 종류를 선택하세요.</li>
+                <li><strong>현재 / 목표 레벨:</strong> 육성하려는 환수의 현재 레벨과 목표 레벨을 입력하세요. (현재 레벨은 0~24, 목표 레벨은 1~25)</li>
+                <li><strong>보유 환수혼 개수:</strong> 현재 인벤토리에 보유 중인 '최상급', '상급', '하급' 환수혼 개수를 입력하세요. (최상급=1000exp, 상급=100exp, 하급=10exp)</li>
+                <li><strong>계산 버튼:</strong> '계산' 버튼을 클릭하면 아래 두 가지 결과를 즉시 확인할 수 있습니다.
+                    <ul>
+                        <li><strong>필요 환수혼:</strong> 목표 레벨까지 도달하기 위한 총 필요 경험치와 이를 충족시키는 데 필요한 최적 환수혼 조합(최상급 우선 사용)을 보여줍니다. 보유 환수혼이 부족하다면, 추가로 필요한 환수혼 개수도 알려드립니다.</li>
+                        <li><strong>도달 가능 레벨:</strong> 현재 보유한 환수혼으로 도달할 수 있는 최대 레벨과, 다음 레벨까지 남은 경험치 및 진행도를 상세하게 보여줍니다.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>💡 환수혼 활용 팁</h3>
+            <ul>
+                <li><strong>환수혼 획득처:</strong> 환수 소환 시 중복 환수 분해, 영웅의 길 보상, 환수 던전, 비서: 환수 보물상자, 이벤트 등을 통해 환수혼을 획득할 수 있습니다.</li>
+                <li><strong>효율적인 육성:</strong> 계산기를 통해 정확한 필요량을 파악하고, 불필요한 환수혼 낭비를 줄일 수 있습니다. 특정 레벨 구간에서는 하급/상급 혼으로 마무리하는 것이 더 효율적일 때도 있습니다.</li>
+                <li><strong>최대 레벨 25의 중요성:</strong> 환수의 25레벨 장착 효과는 캐릭터에게 매우 강력한 시너지를 제공하므로, 주요 환수는 25레벨까지 육성하는 것을 권장합니다.</li>
+            </ul>
+        </div>
+    `;
+}
+
+/**
  * 페이지 정리 함수.
  */
 export function cleanup() {
-  // 이벤트 리스너 제거
   if (elements.expType)
     elements.expType.removeEventListener("change", handleTypeChange);
   if (elements.container) {
