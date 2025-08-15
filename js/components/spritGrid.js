@@ -38,7 +38,7 @@ function createImageWrapper(spirit, getSpiritState) {
   if (state.bondCompleted) imgBox.classList.add("bond-completed");
 
   const img = createElement("img", "", {
-    src: `/${spirit.image}`, // 이미지 경로
+    src: `${spirit.image}`, // 이미지 경로
     alt: spirit.name,
     loading: "lazy", // 이미지 지연 로딩
   });
