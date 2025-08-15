@@ -1,126 +1,43 @@
-# .github/workflows/deploy.yml
-# This workflow is for deploying the frontend (SPA) to GitHub Pages.
-
-name: Deploy Frontend to GitHub Pages # 워크플로우 이름 (프론트엔드 전용)
+name: Deploy Frontend & Backend
 
 on:
   push:
     branches:
-      - main # <<-- 여러분의 기본 브랜치 (main 또는 master)에 맞춰 설정
+      - main
 
 jobs:
-  deploy-frontend: # 작업 이름 (프론트엔드 전용)
-    runs-on: ubuntu-latest # GitHub Actions는 Ubuntu 가상 환경에서 실행
+  deploy-frontend:
+    runs-on: ubuntu-latest
 
-    # GitHub Actions 워크플로우 자체의 권한 설정
-    # 이 권한은 GitHub Pages 배포에만 필요합니다.
     permissions:
-      contents: write # 저장소 콘텐츠(gh-pages 브랜치)에 쓰기 권한
-      pages: write # GitHub Pages 배포를 위한 권한 (공식 액션 사용 시 필수)
-      id-token: write # OIDC를 통한 GitHub Pages v3 액션 인증을 위한 권한 (공식 액션 사용 시 필수)
+      contents: write
+      pages: write
+      id-token: write
 
-    # 환경 변수 설정 (이 워크플로우는 GCP 관련 env를 사용하지 않음)
     # env:
-    # 이 워크플로우는 GCP와 직접 통신하지 않으므로 GCP_PROJECT_ID, AR_LOCATION 등은 필요 없습니다.
-    # 백엔드 배포 워크플로우에서 별도로 관리됩니다.
+    # This workflow does not directly interact with GCP for frontend deployment
+    # GCP_PROJECT_ID: your-gcp-project-id
+    # AR_LOCATION: asia-northeast3
+    # AR_REPO_NAME: go-backend-repo
+    # CR_SERVICE_NAME: wind-app-backend
+    # CR_SERVICE_ACCOUNT: your-cloud-run-service-account@your-project-id.iam.gserviceaccount.com
 
     steps:
-      - name: Checkout repository # GitHub 저장소 코드를 가상 머신으로 가져옵니다.
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      # [수정 시작] Node.js 설치 및 JS/CSS 도구 설치 스텝 제거 (난독화/압축 안함)
-      # - name: Setup Node.js (for JS/CSS processing)
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: "16"
-      # - name: Install JavaScript/CSS tools
-      #   run: |
-      #     npm install -g javascript-obfuscator
-      #     npm install -g clean-css-cli
-      # [수정 끝]
-
-      # -------------------------------------------------------------
-      # 1. Frontend Processing (원본 파일 복사)
-      #    이 섹션은 원본 프론트엔드 파일들을 dist 폴더로 복사합니다.
-      #    난독화, 압축, 경로 변경은 하지 않습니다.
-      # -------------------------------------------------------------
-      - name: Create dist directory and copy raw files # dist 폴더 생성 및 원본 파일 복사
+      - name: Create dist directory and copy raw files
         run: |
-          rm -rf dist # 기존 dist 폴더 삭제
-          mkdir -p dist # 새 dist 폴더 생성
-
-          # 모든 필요한 원본 파일 및 폴더를 dist/로 명시적으로 복사합니다.
-          # 파일 구조에 맞춰 정확히 복사되어야 합니다.
-          cp index.html dist/ # index.html 복사 (루트에 있다고 가정)
-          cp -r assets/ dist/ # assets/ 폴더 전체를 dist/로 복사 (css, img 모두 포함)
-          cp -r js/ dist/ # js/ 폴더 전체를 dist/로 복사
-
-          # 숨김 파일 중 .nojekyll을 제외하고 삭제 (GitHub Pages에서 필요할 수 있음)
-          # 이 과정은 rsync를 사용하지 않았으므로 필요 없을 수 있지만, 안전을 위해 유지
+          rm -rf dist
+          mkdir -p dist
+          cp index.html dist/
+          cp -r assets/ dist/
+          cp -r js/ dist/
           find dist -type f -name ".*" ! -name ".nojekyll" -delete || true
 
-      # [수정 시작] 난독화/압축/HTML 업데이트 관련 스텝들 모두 제거
-      # - name: Process JS files (Obfuscate and rename)
-      #   run: | ... (생략) ...
-      # - name: Process CSS files (Minify and rename)
-      #   run: | ... (생략) ...
-      # - name: Update HTML files to use processed JS and CSS
-      #   run: | ... (생략) ...
-      # [수정 끝]
-      # [수정 시작] GitHub Pages 초기화 및 지연 스텝 추가
-      - name: Initialize GitHub Pages
-        # GitHub Pages는 기본적으로 docs/ 폴더나 루트를 서비스하지만,
-        # JamesIves 액션은 gh-pages 브랜치를 생성합니다.
-        # 이 스텝은 GitHub Pages 설정을 다시 한번 '활성화'하여 시스템이 준비되도록 시도합니다.
-        # 이 스텝 자체는 Pages 배포를 하지 않고, 서비스가 '준비'되었음을 확인하는 역할입니다.
-        run: |
-          # 이 명령어는 Pages 설정이 이미 되어있으면 별다른 출력 없이 통과합니다.
-          # GitHub Pages 서비스가 이 시점에 완전히 초기화되기를 바랍니다.
-          # 현재 Pages 설정은 Settings -> Pages에서 완료했다고 가정.
-          # 따라서 이 스텝은 주로 Pages 서비스가 완전히 초기화되는 것을 기다리는 역할.
-          echo "Ensuring GitHub Pages is fully initialized."
-          # gcloud CLI는 GitHub Pages에 직접적인 명령어가 없습니다.
-          # 이곳은 단지 Pages 서비스의 API가 준비되도록 기다리는 용도입니다.
-        # **Note**: 이 스텝은 실제 GitHub Pages API를 호출하지 않고, 시스템 초기화를 유도하는 간접적인 방법입니다.
-        # GitHub Actions가 Pages API를 통해 배포하기 전에 Pages 서비스가 완전히 '준비'되기를 기다리는 의미.
-
-      - name: Wait for GitHub Pages to be ready (optional)
-        run: |
-          echo "Waiting for 10 seconds for GitHub Pages service to synchronize..."
-          sleep 10s # <<-- 10초 강제 지연
-          echo "Continuing deployment after delay."
-        # [수정 끝]
-      # -------------------------------------------------------------
-      # 2. Deploy Frontend to GitHub Pages (공식 액션 사용)
-      #    원본 프론트엔드 파일들을 GitHub Pages로 배포합니다.
-      # -------------------------------------------------------------
-      - name: Upload Pages Artifact # 배포할 파일을 아티팩트로 업로드 (공식 액션의 첫 단계)
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy Frontend to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: "./dist" # dist 폴더의 내용을 아티팩트로 업로드
-
-      - name: Deploy to GitHub Pages # 공식 GitHub Pages 배포 액션 (아티팩트 배포)
-        id: deployment # 배포 ID
-        uses: actions/deploy-pages@v3 # GitHub Pages v3 배포 액션 사용
-        # 이 액션은 `upload-pages-artifact`에서 생성된 아티팩트를 자동으로 사용하므로 `with:` 옵션이 필요 없습니다.
-        # `token`도 `id-token: write` 권한으로 자동으로 처리됩니다.
-
-      # -------------------------------------------------------------
-      # 백엔드 배포 관련 스텝들은 모두 제거됨 (프론트엔드 전용 워크플로우)
-      # -------------------------------------------------------------
-      # - name: Setup Go (for backend build)
-      #   uses: actions/setup-go@v5
-      #   with:
-      #     go-version: "1.23"
-      # - name: Authenticate to Google Cloud (using JSON Key)
-      #   id: "auth"
-      #   uses: "google-github-actions/auth@v2"
-      #   with:
-      #     project_id: ${{ env.GCP_PROJECT_ID }}
-      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
-      # - name: Set up Cloud SDK (gcloud CLI)
-      #   uses: google-github-actions/setup-gcloud@v2
-      # - name: Build and Push Docker image to Artifact Registry
-      #   run: | ... (생략) ...
-      # - name: Deploy to Cloud Run
-      #   run: | ... (생략) ...
+          branch: gh-pages
+          folder: dist
+          clean: true
+          token: ${{ secrets.GITHUB_TOKEN }}
