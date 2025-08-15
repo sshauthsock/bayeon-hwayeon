@@ -220,7 +220,6 @@ jobs:
           echo "===== Final dist/index.html content after updates ====="
           cat dist/index.html | head -n 30 # 상위 30줄만 출력하여 확인
           echo "======================================================="
-
       - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
         run: |
           echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
