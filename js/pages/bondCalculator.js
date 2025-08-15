@@ -1214,7 +1214,7 @@ function renderSelectedList() {
     card.innerHTML = `
         <button class="remove-spirit" data-action="remove" title="선택 해제">×</button>
         <div class="selected-spirit-header">
-            <img src="/${spirit.image}" alt="${spirit.name}">
+            <img src="${spirit.image}" alt="${spirit.name}">
             <div class="spirit-info">
                 <div class="spirit-name">${spirit.name}</div>
             </div>

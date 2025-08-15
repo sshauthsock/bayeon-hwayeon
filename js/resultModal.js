@@ -139,13 +139,15 @@ function updateResultView(result) {
           .map(
             (spirit) => `
                 <div class="spirit-info-item" title="${spirit.name} (Lv.${
-              spirit.stats?.[0]?.level || 25
+              spirit.level || 25
             })">
-                    <img src="/${spirit.image}" alt="${spirit.name}">
+                    <img src="${spirit.image}" alt="${
+              spirit.name
+            }"> <!-- 여기 수정! 선행 슬래시 제거 -->
                     <div class="spirit-info-details">
                         <div class="spirit-info-name">${spirit.name}</div>
                         <div class="spirit-info-level">Lv.${
-                          spirit.stats?.[0]?.level || 25
+                          spirit.level || 25
                         }</div>
                     </div>
                 </div>`
@@ -341,7 +343,7 @@ function renderSpiritDetailsTable(spirits) {
                         ${spirits
                           .map(
                             (s) =>
-                              `<th><img src="/${s.image}" class="spirit-thumbnail" alt="${s.name}" title="${s.name}"><br><span class="spirit-table-name">${s.name}</span></th>`
+                              `<th><img src="${s.image}" class="spirit-thumbnail" alt="${s.name}" title="${s.name}"><br><span class="spirit-table-name">${s.name}</span></th>`
                           )
                           .join("")}
                         <th class="stat-total-header">합산</th>
