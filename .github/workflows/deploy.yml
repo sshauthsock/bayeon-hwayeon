@@ -1,7 +1,7 @@
 # .github/workflows/deploy.yml
 # This workflow is for deploying the frontend (SPA) to GitHub Pages.
 
-name: Deploy Frontend & Backend # 워크플로우 이름 (프론트엔드 전용)
+name: Deploy Frontend & Backend # 워크플로우 이름
 
 on:
   push:
@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v3
 
       # [수정 시작] Node.js 설치 및 JS/CSS 도구 설치 스텝 제거
+      # 난독화/압축을 하지 않으므로 Node.js 관련 도구는 필요 없습니다.
       # - name: Setup Node.js (for JS/CSS processing)
       #   uses: actions/setup-node@v3
       #   with:
@@ -48,12 +49,15 @@ jobs:
           rm -rf dist # 기존 dist 폴더 삭제
           mkdir -p dist # 새 dist 폴더 생성
 
-          # rsync를 사용하여 .git/, node_modules/, .env, .github/ 등 불필요한 파일을 제외하고 루트의 모든 파일과 폴더를 dist로 복사
-          # 'backend/'는 이 프론트엔드 전용 저장소에는 없어야 하지만, 혹시라도 있다면 제외합니다.
-          # 이 스텝에서 모든 필요한 파일들이 올바른 경로에 복사되어야 합니다.
-          rsync -av --exclude='.git/' --exclude='dist/' --exclude='node_modules/' --exclude='.env' --exclude='.github/' . dist/ || true
+          # [수정 시작] 모든 필요한 원본 파일 및 폴더를 dist/로 명시적으로 복사
+          # 파일 구조에 맞춰 정확히 복사되어야 합니다.
+          cp index.html dist/ # index.html 복사 (루트에 있다고 가정)
+          cp -r assets/ dist/ # assets/ 폴더 전체를 dist/로 복사
+          cp -r js/ dist/ # js/ 폴더 전체를 dist/로 복사
+          # [수정 끝]
 
           # 숨김 파일 중 .nojekyll을 제외하고 삭제 (GitHub Pages에서 필요할 수 있음)
+          # 이 과정은 rsync를 사용하지 않았으므로 필요 없을 수 있지만, 안전을 위해 유지
           find dist -type f -name ".*" ! -name ".nojekyll" -delete || true
 
       # [수정 시작] 난독화/압축/HTML 업데이트 관련 스텝들 모두 제거
@@ -63,11 +67,11 @@ jobs:
       #   run: | ... (생략) ...
       # - name: Update HTML files to use processed JS and CSS
       #   run: | ... (생략) ...
+      # - name: Prepare index.html for GitHub Pages (if needed)
+      #   run: | ... (생략) ...
       # [수정 끝]
-
-      - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
-        run: |
-          echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
+      # 이제 index.html은 그대로 복사되고, 그 안에 있는 경로들은 워크플로우에 의해 변경되지 않습니다.
+      # 따라서 index.html은 모든 리소스를 상대 경로로 참조해야 합니다.
 
       # -------------------------------------------------------------
       # 2. Deploy Frontend to GitHub Pages
@@ -77,7 +81,7 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # 배포할 브랜치 (gh-pages 브랜치가 없으면 자동으로 생성됨)
-          folder: dist # 배포할 소스 코드 폴더 (이제 원본 파일이 들어있음)
+          folder: dist # <<-- dist 폴더의 내용물을 gh-pages 루트로 복사 (JamesIves 액션의 옵션)
           clean: true # gh-pages 브랜치의 이전 내용을 정리하고 배포
           token: ${{ secrets.GITHUB_TOKEN }} # GitHub Pages 배포 권한을 가진 토큰 (GitHub Actions가 자동으로 제공)
 
@@ -85,6 +89,7 @@ jobs:
       # -------------------------------------------------------------
       # 백엔드 배포 관련 스텝들은 모두 제거됨 (프론트엔드 전용 워크플로우)
       # -------------------------------------------------------------
+      # 백엔드 배포는 별도의 저장소(예: baram-yeon)에서 이루어집니다.
       # - name: Setup Go (for backend build)
       #   uses: actions/setup-go@v5
       #   with:
