@@ -1,3 +1,4 @@
+<!-- index.html (최종 수정 버전, 전체 코드) -->
 <!DOCTYPE html>
 <html lang="ko">
 
@@ -7,15 +8,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- 파비콘 (웹사이트 아이콘) -->
-    <!-- [수정] href="/assets/img/BHY.png" -> href="assets/img/BHY.png" -->
-    <link rel="icon" type="image/png" href="assets/img/BHY.png">
+    <link rel="icon" type="image/png" href="assets/img/BHY.png"> <!-- [수정] 상대 경로 -->
 
     <!-- 웹 폰트 (선택 사항) -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
 
     <!-- 메인 CSS 파일 연결 -->
-    <!-- [수정] href="/assets/css/main.css" -> href="assets/css/main.css" -->
-    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/main.css"> <!-- [수정] 상대 경로 -->
 
     <!-- Google tag (gtag.js) GA4 추적 코드 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-WDMWC3L1Q1"></script>
@@ -35,19 +34,16 @@
     <script async src="//t1.daumcdn.net/kas/static/ba.min.js"></script>
     <script>
         var adfit = window.adfit || {};
-        // 이 client ID는 main.js의 KAKAO_ADFIT_CLIENT_ID와 일치해야 합니다.
         adfit.client = '발급받은_카카오_애드핏_클라이언트_ID'; // <<-- 여러분의 카카오 애드핏 클라이언트 ID로 교체!
     </script>
 </head>
 
 <body>
     <!-- 1. 헤더 (모든 페이지 공통) -->
-    <!-- 로고와 메인 탭은 모든 페이지에서 보여야 하므로 여기에 둡니다. -->
     <header class="header">
         <div class="logo-container">
             <a href="#"> <!-- 페이지 리로드를 막기 위해 #으로 변경 -->
-                <img src="assets/img/BHY.png" alt="바연화연 로고" class="logo">
-                <!-- [수정] src="/assets/img/BHY.png" -> src="assets/img/BHY.png" -->
+                <img src="assets/img/BHY.png" alt="바연화연 로고" class="logo"> <!-- [수정] 상대 경로 -->
             </a>
         </div>
         <nav class="tabs" id="mainTabs">
@@ -59,12 +55,9 @@
         </nav>
     </header>
 
-    <!-- AdSense 수동 광고 단위는 main.js에서 동적으로 삽입하거나, SPA에 맞게 재구성하는 것을 권장합니다. -->
-    <!-- HTML에 직접 삽입된 AdSense 수동 광고 블록 (현재로서는 중복) -->
-    <!-- 이 부분은 main.js의 loadKakaoAdfitAd 함수처럼 동적으로 처리하는 것을 고려해보세요. -->
+    <!-- AdSense 수동 광고 단위 (현재로서는 중복) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9431279832646125"
         crossorigin="anonymous"></script>
-    <!-- baram-yeon -->
     <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-9431279832646125" data-ad-slot="7411192287"
         data-ad-format="auto" data-full-width-responsive="true"></ins>
     <script>
@@ -72,11 +65,7 @@
     </script>
 
     <!-- 2. 메인 콘텐츠 컨테이너 (페이지별 내용이 들어갈 무대) -->
-    <!-- 이 곳이 가장 중요합니다. 이 안은 항상 비워둡니다. -->
-    <!-- 각 페이지의 JS 파일이 이 안에 자신의 컨텐츠를 동적으로 채워 넣습니다. -->
     <main id="app-container">
-        <!-- 예: '환수 정보' 탭을 누르면 spiritInfo.js가 여기에 서브 탭, 필터, 이미지 그리드를 생성합니다. -->
-        <!-- 예: '환수 결속' 탭을 누르면 bondCalculator.js가 여기에 계산기 UI를 생성합니다. -->
     </main>
 
     <div class="help-container">
@@ -102,7 +91,6 @@
     <!-- AdSense 수동 광고 단위 하단 블록 (현재로서는 중복) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9431279832646125"
         crossorigin="anonymous"></script>
-    <!-- baram-yeon bottom -->
     <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-9431279832646125" data-ad-slot="2857703752"
         data-ad-format="auto" data-full-width-responsive="true"></ins>
     <script>
@@ -119,9 +107,8 @@
         </div>
     </footer>
 
-    <!-- 4. 메인 JavaScript 파일 로드 (이 경로가 워크플로우에서 업데이트될 것) -->
-    <!-- [수정] src="/js/main.js" -> src="js/main.js" -->
-    <script src="js/main.js" type="module"></script>
+    <!-- 4. 메인 JavaScript 파일 로드 -->
+    <script src="js/main.js" type="module"></script> <!-- [수정] 상대 경로 -->
 </body>
 
 </html>
