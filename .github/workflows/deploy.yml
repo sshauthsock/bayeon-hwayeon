@@ -13,14 +13,16 @@ jobs:
     runs-on: ubuntu-latest # GitHub Actions는 Ubuntu 가상 환경에서 실행
 
     # GitHub Actions 워크플로우 자체의 권한 설정
+    # 이 권한은 GitHub Pages 배포에만 필요합니다.
     permissions:
       contents: write # 저장소 콘텐츠(gh-pages 브랜치)에 쓰기 권한
-      pages: write # GitHub Pages 배포를 위한 권한
-      # id-token: write # Google Cloud 인증이 없어지므로 필요 없음. (명시적으로 제거)
+      pages: write # GitHub Pages 배포를 위한 권한 (공식 액션 사용 시 필수)
+      id-token: write # OIDC를 통한 GitHub Pages v3 액션 인증을 위한 권한 (공식 액션 사용 시 필수)
 
     # 환경 변수 설정 (이 워크플로우는 GCP 관련 env를 사용하지 않음)
     # env:
-    # 비워두기 (이 워크플로우에서는 사용되지 않음)
+    # 이 워크플로우는 GCP와 직접 통신하지 않으므로 GCP_PROJECT_ID, AR_LOCATION 등은 필요 없습니다.
+    # 백엔드 배포 워크플로우에서 별도로 관리됩니다.
 
     steps:
       - name: Checkout repository # GitHub 저장소 코드를 가상 머신으로 가져옵니다.
@@ -54,9 +56,10 @@ jobs:
           cp -r js/ dist/ # js/ 폴더 전체를 dist/로 복사
 
           # 숨김 파일 중 .nojekyll을 제외하고 삭제 (GitHub Pages에서 필요할 수 있음)
+          # 이 과정은 rsync를 사용하지 않았으므로 필요 없을 수 있지만, 안전을 위해 유지
           find dist -type f -name ".*" ! -name ".nojekyll" -delete || true
 
-      # [수정 시작] 모든 JS/CSS/HTML 업데이트 관련 스텝들 제거
+      # [수정 시작] 난독화/압축/HTML 업데이트 관련 스텝들 모두 제거
       # - name: Process JS files (Obfuscate and rename)
       #   run: | ... (생략) ...
       # - name: Process CSS files (Minify and rename)
@@ -70,21 +73,23 @@ jobs:
           echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
 
       # -------------------------------------------------------------
-      # 2. Deploy Frontend to GitHub Pages
+      # 2. Deploy Frontend to GitHub Pages (공식 액션 사용)
       #    원본 프론트엔드 파일들을 GitHub Pages로 배포합니다.
       # -------------------------------------------------------------
-      - name: Deploy Frontend to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Upload Pages Artifact # 배포할 파일을 아티팩트로 업로드 (공식 액션의 첫 단계)
+        uses: actions/upload-pages-artifact@v3
         with:
-          branch: gh-pages # 배포할 브랜치 (gh-pages 브랜치가 없으면 자동으로 생성됨)
-          folder: dist # <<-- dist 폴더의 내용물을 gh-pages 루트로 복사
-          clean: true # gh-pages 브랜치의 이전 내용을 정리하고 배포
-          token: ${{ secrets.GITHUB_TOKEN }} # GitHub Pages 배포 권한을 가진 토큰 (GitHub Actions가 자동으로 제공)
+          path: "./dist" # dist 폴더의 내용을 아티팩트로 업로드
 
+      - name: Deploy to GitHub Pages # 공식 GitHub Pages 배포 액션 (아티팩트 배포)
+        id: deployment # 배포 ID
+        uses: actions/deploy-pages@v3 # GitHub Pages v3 배포 액션 사용
+        # 이 액션은 `upload-pages-artifact`에서 생성된 아티팩트를 자동으로 사용하므로 `with:` 옵션이 필요 없습니다.
+        # `token`도 `id-token: write` 권한으로 자동으로 처리됩니다.
 
       # -------------------------------------------------------------
-      # [수정 시작] 백엔드 배포 관련 스텝들 모두 제거
-      # (GCP 인증, Docker 빌드/푸시, Cloud Run 배포)
+      # 백엔드 배포 관련 스텝들은 모두 제거됨 (프론트엔드 전용 워크플로우)
+      # -------------------------------------------------------------
       # - name: Setup Go (for backend build)
       #   uses: actions/setup-go@v5
       #   with:
@@ -101,4 +106,3 @@ jobs:
       #   run: | ... (생략) ...
       # - name: Deploy to Cloud Run
       #   run: | ... (생략) ...
-      # [수정 끝]
