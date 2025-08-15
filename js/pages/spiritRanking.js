@@ -117,7 +117,7 @@ function renderBondRankings(rankings) {
                 .map(
                   (spirit) =>
                     // 이미지 클릭 시 모달 열기 위해 data-spirit-name 추가
-                    `<img src="/${spirit.image}" alt="${spirit.name}" title="${spirit.name}" class="spirit-image" data-spirit-name="${spirit.name}">`
+                    `<img src="${spirit.image}" alt="${spirit.name}" title="${spirit.name}" class="spirit-image" data-spirit-name="${spirit.name}">`
                 )
                 .join("")}</div></td>
               <td class="faction-column"><div class="faction-tags">${renderSetInfo(

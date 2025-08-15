@@ -61,11 +61,11 @@ function getHTML() {
           <label class="resource-label">보유 수량</label>
           <div class="resource-inputs">
             <div class="resource-input">
-              <img src="/assets/img/gold-button.jpg" alt="황금단추" class="resource-icon-img">
+              <img src="assets/img/gold-button.jpg" alt="황금단추" class="resource-icon-img">
               <input type="number" id="gold-button" value="10000" min="0">
             </div>
             <div class="resource-input">
-              <img src="/assets/img/fivecolored-beads.jpg" alt="오색구슬" class="resource-icon-img">
+              <img src="assets/img/fivecolored-beads.jpg" alt="오색구슬" class="resource-icon-img">
               <input type="number" id="color-ball" value="10000" min="0">
             </div>
           </div>

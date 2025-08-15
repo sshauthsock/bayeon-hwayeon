@@ -60,17 +60,17 @@ function getHTML() {
           </div>
           <div class="soul-panel">
             <div class="soul-item">
-              <img src="/assets/img/high-soul.jpg" alt="최상급">
+              <img src="assets/img/high-soul.jpg" alt="최상급">
               <label>최상급 (1000)</label>
               <input type="number" id="highSoul" min="0" value="0" class="form-control">
             </div>
             <div class="soul-item">
-              <img src="/assets/img/mid-soul.jpg" alt="상급 (100)">
+              <img src="assets/img/mid-soul.jpg" alt="상급 (100)">
               <label>상급 (100)</label>
               <input type="number" id="midSoul" min="0" value="0" class="form-control">
             </div>
             <div class="soul-item">
-              <img src="/assets/img/low-soul.jpg" alt="하급 (10)">
+              <img src="assets/img/low-soul.jpg" alt="하급 (10)">
               <label>하급 (10)</label>
               <input type="number" id="lowSoul" min="0" value="0" class="form-control">
             </div>
