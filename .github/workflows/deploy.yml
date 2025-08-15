@@ -14,14 +14,6 @@ jobs:
       pages: write
       id-token: write
 
-    # env:
-    # This workflow does not directly interact with GCP for frontend deployment
-    # GCP_PROJECT_ID: your-gcp-project-id
-    # AR_LOCATION: asia-northeast3
-    # AR_REPO_NAME: go-backend-repo
-    # CR_SERVICE_NAME: wind-app-backend
-    # CR_SERVICE_ACCOUNT: your-cloud-run-service-account@your-project-id.iam.gserviceaccount.com
-
     steps:
       - uses: actions/checkout@v3
 
@@ -32,6 +24,7 @@ jobs:
           cp index.html dist/
           cp -r assets/ dist/
           cp -r js/ dist/
+          cp ads.txt dist/
           find dist -type f -name ".*" ! -name ".nojekyll" -delete || true
 
       - name: Deploy Frontend to GitHub Pages
