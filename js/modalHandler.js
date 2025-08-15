@@ -109,6 +109,7 @@ function renderSpiritInfo(
     src: `/${spiritData.image}`,
     alt: spiritData.name,
   });
+  console.log("img in modalHandler.js = ", img);
   header.appendChild(img);
 
   const titleSection = createElement("div", "spirit-modal-title-section");
