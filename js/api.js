@@ -11,13 +11,13 @@ const memoryCache = {};
 /**
  * 이미지 경로를 'images/'에서 'assets/img/'로 변환하는 헬퍼 함수.
  * @param {object} spirit - image 속성을 가진 환수 객체
- * @returns {object} 경로가 변환된 환수 객체 또는 원본
+ * @returns {object} 경로가 변환된 환수 객체 또는 원본 (새로운 객체 반환)
  */
 function _transformSpiritImagePath(spirit) {
   if (spirit && typeof spirit.image === "string") {
     // 'images/'로 시작하는 경우에만 'assets/img/'로 변경
     const transformedImage = spirit.image.replace(/^images\//, "assets/img/");
-    return { ...spirit, image: transformedImage };
+    return { ...spirit, image: transformedImage }; // 새로운 객체 반환
   }
   return spirit; // 이미지가 없거나 문자열이 아니면 원본 반환
 }
@@ -25,7 +25,7 @@ function _transformSpiritImagePath(spirit) {
 /**
  * 스피릿 객체 배열에 대한 이미지 경로 변환 헬퍼 함수.
  * @param {Array<object>} spiritsArray - 환수 객체 배열
- * @returns {Array<object>} 경로가 변환된 환수 객체 배열
+ * @returns {Array<object>} 경로가 변환된 환수 객체 배열 (새로운 배열 반환)
  */
 function _transformSpiritsArrayPaths(spiritsArray) {
   if (!Array.isArray(spiritsArray)) {
@@ -61,10 +61,10 @@ async function handleResponse(response) {
  * 이미지 경로 변환을 포함합니다.
  * @param {string} key - 캐시를 위한 sessionStorage 키
  * @param {string} url - fetch를 요청할 URL
- * @param {boolean} [transformSpirits=false] - 응답에 spirits 데이터가 포함되어 이미지 경로 변환이 필요한지 여부
+ * @param {boolean} [shouldTransformSpirits=false] - 응답에 spirits 데이터가 포함되어 이미지 경로 변환이 필요한지 여부
  * @returns {Promise<any>}
  */
-async function fetchWithSessionCache(key, url, transformSpirits = false) {
+async function fetchWithSessionCache(key, url, shouldTransformSpirits = false) {
   const cachedItem = sessionStorage.getItem(key);
   if (cachedItem) {
     try {
@@ -83,14 +83,11 @@ async function fetchWithSessionCache(key, url, transformSpirits = false) {
   const rawData = await handleResponse(response);
 
   let processedData = rawData;
-  if (transformSpirits) {
-    // fetchAllSpirits의 경우 rawData 자체가 spirits 배열입니다.
-    // fetchChakData나 fetchSoulExpTable은 spirits가 포함되지 않으므로 이 부분은 해당 없음.
-    // 하지만 allSpirits의 경우 데이터 구조에 따라 이 부분에서 변환합니다.
-    if (key === "allSpiritsData" && Array.isArray(rawData)) {
-      processedData = _transformSpiritsArrayPaths(rawData);
-    }
+  // fetchAllSpirits의 경우 rawData 자체가 spirits 배열이므로 직접 변환
+  if (shouldTransformSpirits && Array.isArray(rawData)) {
+    processedData = _transformSpiritsArrayPaths(rawData);
   }
+  // 다른 데이터 (예: chakData, soulExpTable)는 spirits 배열을 포함하지 않으므로 추가 변환 없음
 
   try {
     sessionStorage.setItem(key, JSON.stringify(processedData));
@@ -123,29 +120,38 @@ async function fetchWithMemoryCache(key, url) {
   const rawData = await handleResponse(response);
 
   // 랭킹 데이터는 특정 구조를 가지므로 여기서 변환 로직을 포함
-  let transformedData = rawData;
+  // rawData의 깊은 복사본을 만들어 원본 객체가 캐시되거나 다른 곳에서 변경되지 않도록 함
+  let transformedData = JSON.parse(JSON.stringify(rawData)); // <--- 깊은 복사
+
   if (key.includes("/api/rankings")) {
-    // 랭킹 API 응답 처리
-    if (Array.isArray(rawData.rankings)) {
+    if (Array.isArray(transformedData.rankings)) {
       const type = key.includes("type=bond")
         ? "bond"
         : key.includes("type=stat")
         ? "stat"
         : null;
+
       if (type === "bond") {
-        // 결속 랭킹: 각 항목 안에 spirits 배열이 있음
-        transformedData.rankings = rawData.rankings.map((rankingItem) => {
-          if (Array.isArray(rankingItem.spirits)) {
-            rankingItem.spirits = _transformSpiritsArrayPaths(
-              rankingItem.spirits
-            );
+        // 결속 랭킹: 각 랭킹 항목 안에 spirits 배열이 있음
+        transformedData.rankings = transformedData.rankings.map(
+          (rankingItem) => {
+            let item = rankingItem; // 이미 깊은 복사되었으므로 추가 복사 불필요
+            if (Array.isArray(item.spirits)) {
+              item.spirits = _transformSpiritsArrayPaths(item.spirits);
+            }
+            // 백엔드 응답이 bindStat이라면 bindStats로 통일
+            // resultModal이 bindStats를 기대하므로, bindStat이 있으면 복사
+            if (item.bindStat !== undefined && item.bindStats === undefined) {
+              item.bindStats = item.bindStat;
+              // delete item.bindStat; // 원본 데이터에서 삭제하지 않도록 주의 (현재는 깊은 복사이므로 안전)
+            }
+            return item;
           }
-          return rankingItem;
-        });
+        );
       } else if (type === "stat") {
-        // 능력치 랭킹: 각 항목 자체에 image 필드가 있음
+        // 능력치 랭킹: 각 랭킹 항목 자체에 image 필드가 있음
         transformedData.rankings = _transformSpiritsArrayPaths(
-          rawData.rankings
+          transformedData.rankings
         );
       }
     }
@@ -162,7 +168,8 @@ async function fetchWithMemoryCache(key, url) {
  * @returns {Promise<Array<object>>} 모든 환수 데이터 배열
  */
 export async function fetchAllSpirits() {
-  // allSpirits 데이터는 초기 로딩 시 한 번만 필요하므로, session cache를 사용하고 변환을 지시합니다.
+  // fetchWithSessionCache 내부에서 rawData가 배열이면 이미지 경로를 변환하도록 지시 (true)
+  // key를 "allSpiritsData"로 명시하여 캐시 관리
   return fetchWithSessionCache(
     "allSpiritsData",
     `${BASE_URL}/api/alldata`,
