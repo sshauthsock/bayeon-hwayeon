@@ -135,94 +135,100 @@ jobs:
           echo "======================="
 
       - name: Update HTML files to use processed JS and CSS # HTML 파일 내 JS/CSS 참조 경로 업데이트
-        run: | # Node.js 스크립트를 YAML 파일 내부에 리터럴 블록 스타일로 포함
-          node -e '
-            const fs = require("fs");
-            const path = require("path");
+        run: |
+          # [수정 시작] update_html_references.js 파일을 생성하고 그 파일을 Node.js로 실행합니다.
+          # 현재 작업 디렉토리('./dist/')에 스크립트 파일을 생성합니다.
+          cat << 'EOF' > update_html_references.js
+          const fs = require('fs');
+          const path = require('path');
+                
+          const htmlFilesDir = './'; // 현재 working-directory가 './dist/'이므로, '.'이 곧 dist/
+                
+          // 매핑 파일 읽기 헬퍼 함수
+          function readMappingFile(filePath) {
+              // 이 스크립트의 working-directory는 './dist/' 입니다.
+              // 매핑 파일 (js_mapping.txt, css_mapping.txt)은 저장소 루트에 있습니다.
+              // 따라서 'dist/'에서 '저장소 루트'로 가려면 '..'를 사용해야 합니다.
+              const absoluteMappingPath = path.join(process.cwd(), '..', filePath);
+                
+              if (!fs.existsSync(absoluteMappingPath)) {
+                  console.error(`Error: Mapping file not found at ${absoluteMappingPath}`);
+                  return new Map();
+              }
+              const content = fs.readFileSync(absoluteMappingPath, 'utf8');
+              const lines = content.split('\n').filter(line => line.trim() !== '' && !line.startsWith('#'));
+              const mapping = new Map();
+              lines.forEach(line => {
+                  const [oldPath, newPath] = line.split(',');
+                  if (oldPath && newPath) {
+                      mapping.set(oldPath.trim(), newPath.trim());
+                  }
+              });
+              return mapping;
+          }
+                
+          const jsMapping = readMappingFile('js_mapping.txt');
+          const cssMapping = readMappingFile('css_mapping.txt');
+                
+          console.log('JS MAPPING:', jsMapping);
+          console.log('CSS MAPPING:', cssMapping);
+                
+          // HTML 파일들을 재귀적으로 찾기
+          function findHtmlFiles(dir) {
+              let htmlFiles = [];
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                  const fullPath = path.join(dir, file);
+                  const stat = fs.statSync(fullPath);
+                  if (stat.isDirectory()) {
+                      htmlFiles = htmlFiles.concat(findHtmlFiles(fullPath));
+                  } else if (stat.isFile() && file.endsWith('.html')) {
+                      htmlFiles.push(fullPath);
+                  }
+              }
+              return htmlFiles;
+          }
+            
+          const htmlFiles = findHtmlFiles(htmlFilesDir);
+            
+          htmlFiles.forEach(htmlFilePath => {
+              console.log(`Updating references in: ${htmlFilePath}`);
+              let content = fs.readFileSync(htmlFilePath, 'utf8');
+            
+              jsMapping.forEach((newPath, oldPath) => {
+                  // 정규식 패턴: src="oldPath" 또는 src='oldPath' 또는 src="/oldPath" 또는 src='/oldPath'
+                  // 경로 문자열의 특수문자 (예: / . ?) 등을 이스케이프해야 합니다.
+                  const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
+                  // src="/oldPath" 형태를 매칭합니다. (앞에 /가 있는 절대 경로)
+                  const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
+                  content = content.replace(regex, `src="${newPath}"`);
+                  console.log(`  JS: Replaced src /${oldPath} with ${newPath}`); // 디버깅 로그
+              });
+            
+              cssMapping.forEach((newPath, oldPath) => {
+                  // 정규식 패턴: href="oldPath" 또는 href='oldPath' 또는 href="/oldPath" 또는 href='/oldPath'
+                  const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
+                  const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
+                  content = content.replace(regex, `href="${newPath}"`);
+                  console.log(`  CSS: Replaced href /${oldPath} with ${newPath}`); // 디버깅 로그
+              });
+            
+              // 파일 상단에 처리되었음을 알리는 주석 추가 (캐시 무효화용)
+              const timestamp = new Date().toLocaleString();
+              content = `<!-- Files processed: ${timestamp} -->\n` + content;
+            
+              fs.writeFileSync(htmlFilePath, content, 'utf8');
+              console.log(`Updated references in ${htmlFilePath}`);
+          EOF
+          # 생성된 Node.js 스크립트 실행 (./로 현재 디렉토리 명시)
+          node ./update_html_references.js
+          # [수정 끝]
 
-            // GitHub Pages의 기본 경로 (저장소 이름이 서브디렉토리로 붙음)
-            // 예: /bayeon-hwayeon/
-            const GITHUB_PAGES_BASE_PATH = `/${process.env.GITHUB_REPOSITORY.split("/")[1]}/`;
-
-            const htmlFilesDir = "./dist"; // HTML 파일들이 있는 디렉토리 (dist/)
-
-            // 매핑 파일 읽기 헬퍼 함수
-            function readMappingFile(filePath) {
-                if (!fs.existsSync(filePath)) {
-                    return new Map();
-                }
-                const content = fs.readFileSync(filePath, "utf8");
-                const lines = content.split("\n").filter(line => line.trim() !== "" && !line.startsWith("#"));
-                const mapping = new Map();
-                lines.forEach(line => {
-                    const [oldPath, newPath] = line.split(",");
-                    if (oldPath && newPath) {
-                        mapping.set(oldPath.trim(), newPath.trim());
-                    }
-                });
-                return mapping;
-            }
-
-            const jsMapping = readMappingFile("js_mapping.txt");
-            const cssMapping = readMappingFile("css_mapping.txt");
-
-            console.log("JS MAPPING:", jsMapping);
-            console.log("CSS MAPPING:", cssMapping);
-
-            // HTML 파일들을 재귀적으로 찾기
-            function findHtmlFiles(dir) {
-                let htmlFiles = [];
-                const files = fs.readdirSync(dir);
-                for (const file of files) {
-                    const fullPath = path.join(dir, file);
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isDirectory()) {
-                        htmlFiles = htmlFiles.concat(findHtmlFiles(fullPath));
-                    } else if (stat.isFile() && file.endsWith(".html")) {
-                        htmlFiles.push(fullPath);
-                    }
-                }
-                return htmlFiles;
-            }
-
-            const htmlFiles = findHtmlFiles(htmlFilesDir);
-
-            htmlFiles.forEach(htmlFilePath => {
-                console.log(`Updating references in: ${htmlFilePath}`);
-                let content = fs.readFileSync(htmlFilePath, "utf8");
-
-                jsMapping.forEach((newPath, oldPath) => {
-                    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                    // [수정] src="/oldPath" 형태를 매칭하고 GITHUB_PAGES_BASE_PATH를 앞에 붙입니다.
-                    const regex = new RegExp(`src=["']\\/${escapedOldPath}["']`, 'g');
-                    content = content.replace(regex, `src="${GITHUB_PAGES_BASE_PATH}${newPath}"`);
-                    console.log(`  JS: Replaced src /${oldPath} with ${GITHUB_PAGES_BASE_PATH}${newPath}`); // 디버깅 로그
-                });
-
-                cssMapping.forEach((newPath, oldPath) => {
-                    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[$$$$/g, '\\$&');
-                    // [수정] href="/oldPath" 형태를 매칭하고 GITHUB_PAGES_BASE_PATH를 앞에 붙입니다.
-                    const regex = new RegExp(`href=["']\\/${escapedOldPath}["']`, 'g');
-                    content = content.replace(regex, `href="${GITHUB_PAGES_BASE_PATH}${newPath}"`);
-                    console.log(`  CSS: Replaced href /${oldPath} with ${GITHUB_PAGES_BASE_PATH}${newPath}`); // 디버깅 로그
-                });
-
-                // 파일 상단에 처리되었음을 알리는 주석 추가 (캐시 무효화용)
-                const timestamp = new Date().toLocaleString();
-                content = `<!-- Files processed: ${timestamp} -->\n` + content;
-
-                fs.writeFileSync(htmlFilePath, content, 'utf8');
-                console.log(`Updated references in ${htmlFilePath}`);
-            });
-          '
-          # GITHUB_REPOSITORY 환경 변수를 Node.js 스크립트로 전달
-          env:
-            GITHUB_REPOSITORY: ${{ github.repository }} 
-
+          # 최종적으로 dist/index.html 파일의 내용을 확인하는 디버깅 스텝
           echo "===== Final dist/index.html content after updates ====="
           cat dist/index.html | head -n 30 # 상위 30줄만 출력하여 확인
           echo "======================================================="
-
+        working-directory: ./dist/ # 이 스텝의 작업 디렉토리는 여전히 dist/ 입니다.
       - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
         run: |
           echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
