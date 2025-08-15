@@ -373,14 +373,14 @@ function updateButtonState(card, state, hasFirstUnlockedOverride = null) {
         ? "upgradeFirst"
         : `upgradeOther${state.level}`; // 레벨에 따라 다른 비용
       const cost = pageState.chakData.costs[costKey];
-      button.innerHTML = `<img src="/assets/img/fivecolored-beads.jpg" class="btn-icon"> <span>강화 ${cost}</span>`;
+      button.innerHTML = `<img src="assets/img/fivecolored-beads.jpg" class="btn-icon"> <span>강화 ${cost}</span>`;
     }
   } else {
     // 개방되지 않은 상태에서 개방 비용
     const costKey = hasFirstUnlocked ? "unlockOther" : "unlockFirst"; // 첫 번째인지 아닌지에 따라 비용 다름
     const cost = pageState.chakData.costs[costKey];
     const icon = hasFirstUnlocked ? "gold-button.jpg" : "fivecolored-beads.jpg";
-    button.innerHTML = `<img src="/assets/img/${icon}" class="btn-icon"> <span>선택 ${cost}</span>`;
+    button.innerHTML = `<img src="assets/img/${icon}" class="btn-icon"> <span>선택 ${cost}</span>`;
   }
 }
 
@@ -519,7 +519,7 @@ async function renderSummary() {
     // 자원 현황 HTML 생성
     elements.resourceSummary.innerHTML = `
             <div class="resource-summary-item">
-                <img src="/assets/img/gold-button.jpg" class="resource-icon-img-small">
+                <img src="assets/img/gold-button.jpg" class="resource-icon-img-small">
                 <span class="resource-details">
                     <span class="${
                       resources.goldButton.remaining < 0
@@ -529,7 +529,7 @@ async function renderSummary() {
                 </span>
             </div>
             <div class="resource-summary-item">
-                <img src="/assets/img/fivecolored-beads.jpg" class="resource-icon-img-small">
+                <img src="assets/img/fivecolored-beads.jpg" class="resource-icon-img-small">
                 <span class="resource-details">
                     <span class="${
                       resources.colorBall.remaining < 0
