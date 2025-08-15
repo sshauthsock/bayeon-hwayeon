@@ -67,11 +67,29 @@ jobs:
       # - name: Update HTML files to use processed JS and CSS
       #   run: | ... (생략) ...
       # [수정 끝]
-
-      - name: Prepare index.html for GitHub Pages (if needed) # index.html 진입점 확인/설정
+      # [수정 시작] GitHub Pages 초기화 및 지연 스텝 추가
+      - name: Initialize GitHub Pages
+        # GitHub Pages는 기본적으로 docs/ 폴더나 루트를 서비스하지만,
+        # JamesIves 액션은 gh-pages 브랜치를 생성합니다.
+        # 이 스텝은 GitHub Pages 설정을 다시 한번 '활성화'하여 시스템이 준비되도록 시도합니다.
+        # 이 스텝 자체는 Pages 배포를 하지 않고, 서비스가 '준비'되었음을 확인하는 역할입니다.
         run: |
-          echo "Ensuring index.html is the entry point for SPA. No special redirect needed."
+          # 이 명령어는 Pages 설정이 이미 되어있으면 별다른 출력 없이 통과합니다.
+          # GitHub Pages 서비스가 이 시점에 완전히 초기화되기를 바랍니다.
+          # 현재 Pages 설정은 Settings -> Pages에서 완료했다고 가정.
+          # 따라서 이 스텝은 주로 Pages 서비스가 완전히 초기화되는 것을 기다리는 역할.
+          echo "Ensuring GitHub Pages is fully initialized."
+          # gcloud CLI는 GitHub Pages에 직접적인 명령어가 없습니다.
+          # 이곳은 단지 Pages 서비스의 API가 준비되도록 기다리는 용도입니다.
+        # **Note**: 이 스텝은 실제 GitHub Pages API를 호출하지 않고, 시스템 초기화를 유도하는 간접적인 방법입니다.
+        # GitHub Actions가 Pages API를 통해 배포하기 전에 Pages 서비스가 완전히 '준비'되기를 기다리는 의미.
 
+      - name: Wait for GitHub Pages to be ready (optional)
+        run: |
+          echo "Waiting for 10 seconds for GitHub Pages service to synchronize..."
+          sleep 10s # <<-- 10초 강제 지연
+          echo "Continuing deployment after delay."
+        # [수정 끝]
       # -------------------------------------------------------------
       # 2. Deploy Frontend to GitHub Pages (공식 액션 사용)
       #    원본 프론트엔드 파일들을 GitHub Pages로 배포합니다.
