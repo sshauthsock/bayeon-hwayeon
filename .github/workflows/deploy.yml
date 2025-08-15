@@ -20,15 +20,15 @@ jobs:
       id-token: write # GitHub Pages v3 액션의 OIDC 관련 (현재 JamesIves 액션에는 불필요할 수 있으나 안전을 위해 유지)
 
     # 환경 변수 설정 (GCP 관련 환경 변수는 이제 필요 없음)
-    env:
-      # 이 워크플로우는 GCP와 직접 통신하지 않으므로 GCP_PROJECT_ID, AR_LOCATION 등은 필요 없습니다.
-      # 백엔드 배포 워크플로우에서 별도로 관리됩니다.
-      # 예시:
-      # GCP_PROJECT_ID: your-gcp-project-id
-      # AR_LOCATION: asia-northeast3
-      # AR_REPO_NAME: go-backend-repo
-      # CR_SERVICE_NAME: wind-app-backend
-      # CR_SERVICE_ACCOUNT: your-cloud-run-service-account@your-project-id.iam.gserviceaccount.com
+    # env:
+    # 이 워크플로우는 GCP와 직접 통신하지 않으므로 GCP_PROJECT_ID, AR_LOCATION 등은 필요 없습니다.
+    # 백엔드 배포 워크플로우에서 별도로 관리됩니다.
+    # 예시:
+    # GCP_PROJECT_ID: your-gcp-project-id
+    # AR_LOCATION: asia-northeast3
+    # AR_REPO_NAME: go-backend-repo
+    # CR_SERVICE_NAME: wind-app-backend
+    # CR_SERVICE_ACCOUNT: your-cloud-run-service-account@your-project-id.iam.gserviceaccount.com
 
     steps:
       - name: Checkout repository # GitHub 저장소 코드를 가상 머신으로 가져옵니다.
