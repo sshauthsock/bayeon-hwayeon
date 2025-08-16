@@ -25,7 +25,7 @@ function ensureNumber(value) {
 function createBaseModal() {
   removeAllModals(); // 현재 열려있는 모달이 있다면 닫기
   const modal = createElement("div", "spirit-modal-overlay", {
-    id: "spirit-info-modal",
+    id: "spirit-info-modal", // 환수 정보 모달의 고유 ID
   });
   const content = createElement("div", "spirit-modal-content");
   modal.appendChild(content);
@@ -69,7 +69,7 @@ export function showInfo(
 
   // 초기 레벨 설정 (랭킹 모드면 25, 아니면 0)
   const initialLevel = isRankingMode ? 25 : 0;
-  // 모달 내용 렌더링
+  // 모달 내용 렌더링 (이 함수 내부에서 광고 단위 생성 및 재요청)
   renderSpiritInfo(
     content,
     spiritData,
@@ -80,36 +80,30 @@ export function showInfo(
 
   modal.style.display = "flex"; // 모달 표시
 
-  // --- 카카오 광고 로드 로직 추가 시작 (Spirit Info Modal) ---
-  // 모달이 완전히 표시된 후에 광고를 로드하는 것이 좋습니다.
+  // showInfo 호출 시점에만 실행되는 최초 광고 로드 로직 (renderSpiritInfo 내부 로직과 중복될 수 있으나, 안전을 위해 유지)
+  // renderSpiritInfo 내부에서 setTimeout을 사용하므로, 이 부분은 제거해도 무방합니다.
+  /*
   setTimeout(() => {
     try {
-      if (window.adfit && typeof window.adfit.render === "function") {
-        // 모달 내 모든 kakao_ad_area 인스턴스를 찾아서 렌더링
-        const adContainers = document.querySelectorAll(
-          "#spirit-info-modal .kakao_ad_area"
-        );
-        adContainers.forEach((adElement) => {
+      if (window.adfit && typeof window.adfit.render === 'function') {
+        const adContainers = document.querySelectorAll('#spirit-info-modal .kakao_ad_area');
+        adContainers.forEach(adElement => {
           window.adfit.render(adElement);
         });
-        console.log("Kakao AdFit: Ads re-rendered in Spirit Info modal.");
+        console.log("Kakao AdFit: Ads re-rendered in Spirit Info modal (initial load).");
       } else {
-        console.warn(
-          "Kakao AdFit script (window.adfit) not yet loaded or not available in Spirit Info modal."
-        );
+        console.warn("Kakao AdFit script (window.adfit) not yet loaded or not available (initial load).");
       }
     } catch (error) {
-      console.error(
-        "Kakao AdFit: Error rendering ads in Spirit Info modal:",
-        error
-      );
+      console.error("Kakao AdFit: Error rendering ads (initial load):", error);
     }
-  }, 100); // 짧은 딜레이를 주어 DOM 렌더링 완료 대기 (필요시 조정)
-  // --- 카카오 광고 로드 로직 추가 종료 ---
+  }, 100);
+  */
 }
 
 /**
  * 모달의 콘텐츠를 렌더링하는 함수 (재귀 호출을 통해 레벨 변경 시 UI 업데이트)
+ * 이 함수는 모달의 내용을 완전히 새로 그립니다.
  * @param {HTMLElement} container - 모달 콘텐츠가 렌더링될 부모 요소
  * @param {object} spiritData - 환수 데이터
  * @param {number} level - 현재 표시할 환수 레벨
@@ -123,7 +117,7 @@ function renderSpiritInfo(
   highlightStat,
   isRankingMode
 ) {
-  container.innerHTML = ""; // 기존 내용 초기화
+  container.innerHTML = ""; // 기존 내용 초기화 (광고 포함 모든 자식 요소 파괴)
 
   // 닫기 버튼 생성 및 이벤트 리스너 부착
   const closeBtn = createElement("button", "modal-close-btn", { text: "✕" });
@@ -131,9 +125,10 @@ function renderSpiritInfo(
   container.appendChild(closeBtn);
 
   // --- 카카오 광고 단위 추가 시작 (Spirit Info Modal) ---
+  // 레벨 변경 시에도 광고를 다시 그리기 위해 매번 새로 생성
   const kakaoAdSpiritInfoModal = createElement("ins", "kakao_ad_area", {
-    style: "display:none; margin: 10px auto;",
-    "data-ad-unit": "DAN-NsxEDVcaO6e1i2Gs",
+    style: "display:none; margin: 10px auto;", // CSS로 중앙 정렬 및 여백
+    "data-ad-unit": "DAN-NsxEDVcaO6e1i2Gs", // TODO: 당신의 광고 단위 ID로 교체!
     "data-ad-width": "728",
     "data-ad-height": "90",
   });
@@ -185,6 +180,30 @@ function renderSpiritInfo(
 
   // 현재 레벨에 맞는 스탯 정보 표시
   displayStats(spiritData, level, highlightStat);
+
+  // --- 레벨 변경 후 광고 재요청 로직 시작 ---
+  // 모달 내용이 완전히 그려진 후 짧은 딜레이를 주어 광고를 재요청
+  setTimeout(() => {
+    try {
+      if (window.adfit && typeof window.adfit.render === "function") {
+        // 새로 생성된 광고 단위를 직접 전달하여 렌더링 요청
+        window.adfit.render(kakaoAdSpiritInfoModal);
+        console.log(
+          "Kakao AdFit: Ad re-rendered after level change in Spirit Info modal."
+        );
+      } else {
+        console.warn(
+          "Kakao AdFit script not yet loaded or available for re-rendering."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Kakao AdFit: Error re-rendering ad after level change:",
+        error
+      );
+    }
+  }, 100); // 100ms 딜레이
+  // --- 레벨 변경 후 광고 재요청 로직 종료 ---
 }
 
 /**

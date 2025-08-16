@@ -1437,9 +1437,15 @@ table {
 .kakao_ad_area {
     min-height: 30px;
     display: flex !important;
+    /* 항상 flexbox로 */
     justify-content: center;
+    /* 가로 중앙 정렬 */
     align-items: center;
+    /* 세로 중앙 정렬 */
     text-align: center;
+    /* 내부 텍스트도 중앙 정렬 */
+    /* width: 100%; 를 이 클래스에 직접 적용하여 부모 너비에 맞추도록 합니다. */
+    /* 또는, #optimalModalContent .kakao_ad_area 에서 width: 100%를 명시 */
 }
 
 .modal .kakao_ad_area {
@@ -1458,10 +1464,11 @@ table {
 #optimalModalContent .kakao_ad_area {
     min-height: 50px;
     width: 100%;
-    /* 너비는 100%로 설정되어 모달 너비에 따라 조절됩니다. */
+    /* <--- 중요: 부모 너비에 꽉 채우도록 100% 설정 */
     max-width: 728px;
-    /* 최대 너비 제한 */
+    /* 너무 커지지 않도록 최대 너비 제한 */
     margin: var(--space-md) auto;
+    /* <--- 중요: auto 마진으로 중앙 정렬 */
     background-color: var(--bg-gray);
     border-radius: var(--radius-sm);
     overflow: hidden;
@@ -2544,7 +2551,7 @@ input:checked+.toggle-slider:before {
     transform: scale(1.05);
 }
 
-.tabs {
+/* .tabs {
     display: flex;
     align-items: center;
     flex-grow: 1;
@@ -2606,9 +2613,98 @@ input:checked+.toggle-slider:before {
             rgba(52, 152, 219, 0.05) 60%,
             transparent);
     backdrop-filter: blur(4px);
+} */
+
+.tabs {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    height: 100%;
+    margin-right: var(--space-lg);
+    background-color: transparent;
+    /* 헤더 배경을 사용 */
 }
 
-.sub-tabs {
+.tab {
+    padding: 14px var(--space-lg);
+    margin: 0 4px;
+    /* 마진 조정 */
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    /* 부드러운 전환 */
+    border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.7);
+    /* 비활성 탭 색상 (조금 흐리게) */
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-align: center;
+    white-space: nowrap;
+    position: relative;
+    /* 활성 밑줄을 위해 */
+    overflow: hidden;
+    /* 보더 애니메이션을 위해 */
+    border: 1px solid transparent;
+    /* 기본 테두리 투명 */
+}
+
+.tab:hover {
+    color: var(--text-white);
+    /* 호버 시 밝게 */
+    background-color: rgba(255, 255, 255, 0.1);
+    /* 미묘한 배경 강조 */
+    border-color: rgba(255, 255, 255, 0.2);
+    /* 미묘한 테두리 */
+}
+
+.tab.active {
+    color: var(--text-white);
+    /* 활성 탭 색상 */
+    font-weight: 600;
+    /* 활성 탭 글꼴 굵게 */
+    background-color: transparent;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    /* 활성 탭 그림자 */
+    /* background-image: linear-gradient(to bottom, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.05) 60%, transparent); */
+    backdrop-filter: blur(4px);
+    /* 블러 효과 유지 */
+    border-color: var(--color-primary-dark);
+    /* 활성 탭 테두리 색상 */
+}
+
+/* 활성 탭 하단 그라디언트 밑줄 애니메이션 */
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    /* 탭 하단에 위치 */
+    left: 0;
+    right: 0;
+    height: 4px;
+    /* 밑줄 두께 */
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    /* 파란색 -> 초록색 그라디언트 */
+    opacity: 1;
+    border-radius: 2px 2px 0 0;
+    /* 끝부분만 둥글게 */
+    transform: scaleX(1);
+    /* 너비 꽉 채움 */
+    transition: transform 0.3s ease-out;
+    /* 너비 변화 애니메이션 */
+}
+
+.tab.active:hover::after {
+    transform: scaleX(1.05);
+    /* 호버 시 약간 커지게 */
+}
+
+/* 활성 탭 하단의 작은 점 제거 (그라디언트 밑줄로 대체) */
+.tab.active::before {
+    content: none;
+    /* 제거 */
+}
+
+/* .sub-tabs {
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -2671,7 +2767,81 @@ input:checked+.toggle-slider:before {
 
 .sub-tabs .tab.active:after {
     display: block;
+} */
+
+.sub-tabs {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin: 0;
+    padding: 8px 0;
+    /* 패딩 증가 */
+    gap: var(--radius-sm);
+    background-color: var(--bg-light);
+    /* 더 밝은 배경색 */
+    position: sticky;
+    top: 55px;
+    /* 헤더 높이 + 마진 */
+    z-index: 99;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    /* 그림자 추가 */
 }
+
+.sub-tabs .tab {
+    position: relative;
+    padding: 8px 16px;
+    /* 패딩 증가 */
+    min-width: 100px;
+    /* 최소 너비 지정 (모바일에서 유동적으로 변함) */
+    text-align: center;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    /* 비활성 탭 텍스트 색상 */
+    background-color: var(--bg-white);
+    /* 흰색 배경 */
+    border: 1px solid var(--border-medium);
+    /* 테두리 */
+    border-radius: var(--radius-md);
+    /* 모서리 둥글게 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    /* 미묘한 그림자 */
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    /* 부드러운 전환 */
+    margin: 0 4px;
+}
+
+.sub-tabs .tab:hover {
+    color: var(--color-primary-dark);
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    /* 호버 시 살짝 위로 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sub-tabs .tab.active {
+    color: var(--text-white);
+    background-color: var(--color-primary);
+    /* 활성 탭 배경색 */
+    border-color: var(--color-primary-dark);
+    box-shadow: 0 3px 8px rgba(var(--color-primary-rgb), 0.3);
+    /* 활성 탭 그림자 */
+    transform: translateY(-1px);
+    /* 살짝 올라간 상태 유지 */
+    font-weight: 600;
+    z-index: 1;
+    /* 활성 탭이 살짝 위로 보이도록 */
+}
+
+/* 서브 탭 활성 시 하단 삼각형 제거 */
+.sub-tabs .tab:after {
+    content: none;
+    /* 제거 */
+}
+
 
 /* Help & Tooltips */
 .help-container {
@@ -6739,7 +6909,7 @@ tr.max-level {
 
 #app-container {
     position: relative;
-    min-height: calc(100vh - 120px);
+    /* min-height: calc(100vh - 120px); */
     /* 헤더와 푸터 높이를 제외한 최소 높이 */
 }
 
@@ -8734,5 +8904,83 @@ input:focus {
     .ranking-table td {
         padding: 3px 2px;
         /* 모바일에서 테이블 셀 패딩 조정 */
+    }
+}
+
+.kakao-gift-btn {
+    background-color: #FFEB00;
+    /* 카카오톡 대표 색상 (노란색) */
+    color: #3C1E1E;
+    /* 어두운 갈색 텍스트 */
+    padding: var(--radius-sm) 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 var(--space-sm);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    white-space: nowrap;
+    min-height: 36px;
+}
+
+.kakao-gift-btn:hover {
+    background-color: #FEE500;
+    /* 호버 시 색상 변경 */
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.kakao-gift-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .tabs {
+        flex-wrap: nowrap;
+        /* 탭이 줄바꿈되지 않도록 */
+        overflow-x: auto;
+        /* 넘칠 경우 가로 스크롤 */
+        -webkit-overflow-scrolling: touch;
+        /* 부드러운 스크롤 */
+        justify-content: flex-start;
+        /* 탭들을 왼쪽으로 정렬 */
+    }
+
+    .tab {
+        flex-shrink: 0;
+        /* 탭이 줄어들지 않도록 */
+        padding: 10px 14px;
+        /* 모바일 패딩 조정 */
+        font-size: var(--text-sm);
+        /* 모바일 글꼴 크기 */
+        margin: 0 2px;
+        /* 마진 조정 */
+    }
+
+    .tab.active::after {
+        height: 3px;
+        /* 모바일 밑줄 두께 조정 */
+    }
+
+    .sub-tabs {
+        padding: 6px 0;
+        /* 모바일 서브탭 패딩 조정 */
+        flex-wrap: nowrap;
+        /* 서브탭도 줄바꿈되지 않도록 */
+        overflow-x: auto;
+        justify-content: flex-start;
+    }
+
+    .sub-tabs .tab {
+        flex-shrink: 0;
+        padding: 6px 10px;
+        /* 모바일 서브탭 패딩 */
+        font-size: var(--text-xs);
+        /* 모바일 서브탭 글꼴 크기 */
+        margin: 0 2px;
     }
 }
