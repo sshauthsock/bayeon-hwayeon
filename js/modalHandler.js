@@ -1,10 +1,10 @@
+// js/modalHandler.js
+
 import { createElement } from "./utils.js";
 import { state as globalState } from "./state.js";
-import { FACTION_ICONS, STATS_MAPPING, PERCENT_STATS } from "./constants.js"; // PERCENT_STATS 임포트
+import { FACTION_ICONS, STATS_MAPPING, PERCENT_STATS } from "./constants.js";
 
-// --- 모듈 내부 변수 및 상태 ---
 let activeModal = null; // 현재 활성화된 모달 요소를 추적하여 중복 방지 및 제거 용이
-// const PERCENT_STATS = [ ... ]; // 중복 정의 삭제
 
 // --- 헬퍼 함수 ---
 // 숫자로 변환하며, 콤마 제거 및 NaN 처리
@@ -79,6 +79,33 @@ export function showInfo(
   );
 
   modal.style.display = "flex"; // 모달 표시
+
+  // --- 카카오 광고 로드 로직 추가 시작 (Spirit Info Modal) ---
+  // 모달이 완전히 표시된 후에 광고를 로드하는 것이 좋습니다.
+  setTimeout(() => {
+    try {
+      if (window.adfit && typeof window.adfit.render === "function") {
+        // 모달 내 모든 kakao_ad_area 인스턴스를 찾아서 렌더링
+        const adContainers = document.querySelectorAll(
+          "#spirit-info-modal .kakao_ad_area"
+        );
+        adContainers.forEach((adElement) => {
+          window.adfit.render(adElement);
+        });
+        console.log("Kakao AdFit: Ads re-rendered in Spirit Info modal.");
+      } else {
+        console.warn(
+          "Kakao AdFit script (window.adfit) not yet loaded or not available in Spirit Info modal."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Kakao AdFit: Error rendering ads in Spirit Info modal:",
+        error
+      );
+    }
+  }, 100); // 짧은 딜레이를 주어 DOM 렌더링 완료 대기 (필요시 조정)
+  // --- 카카오 광고 로드 로직 추가 종료 ---
 }
 
 /**
@@ -103,13 +130,22 @@ function renderSpiritInfo(
   closeBtn.addEventListener("click", removeAllModals);
   container.appendChild(closeBtn);
 
+  // --- 카카오 광고 단위 추가 시작 (Spirit Info Modal) ---
+  const kakaoAdSpiritInfoModal = createElement("ins", "kakao_ad_area", {
+    style: "display:none; margin: 10px auto;",
+    "data-ad-unit": "DAN-NsxEDVcaO6e1i2Gs",
+    "data-ad-width": "728",
+    "data-ad-height": "90",
+  });
+  container.appendChild(kakaoAdSpiritInfoModal); // 모달의 가장 위에 광고 추가
+  // --- 카카오 광고 단위 추가 종료 ---
+
   // 헤더 (환수 이미지, 이름, 레벨 컨트롤)
   const header = createElement("div", "spirit-modal-header");
   const img = createElement("img", "spirit-modal-image", {
-    src: `${spiritData.image}`,
+    src: `${spiritData.image}`, // 이미지 경로 (선행 슬래시 없음)
     alt: spiritData.name,
   });
-  console.log("img in modalHandler.js = ", img);
   header.appendChild(img);
 
   const titleSection = createElement("div", "spirit-modal-title-section");
@@ -119,7 +155,7 @@ function renderSpiritInfo(
   // 세력 아이콘 추가
   if (spiritData.influence && FACTION_ICONS[spiritData.influence]) {
     const factionIcon = createElement("img", "influence-icon", {
-      src: FACTION_ICONS[spiritData.influence],
+      src: FACTION_ICONS[spiritData.influence], // 이미지 경로 (선행 슬래시 없음)
       alt: spiritData.influence,
       title: spiritData.influence,
     });
