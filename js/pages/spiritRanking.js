@@ -5,7 +5,7 @@ import { createElement } from "../utils.js";
 import * as api from "../api.js";
 import { showInfo as showSpiritInfoModal } from "../modalHandler.js";
 import { showLoading, hideLoading } from "../loadingIndicator.js";
-import { STATS_MAPPING } from "../constants.js";
+import { STATS_MAPPING, FACTION_ICONS } from "../constants.js";
 // resultModal.js에서 showResultModal 함수를 showOptimalResultModal이라는 이름으로 임포트
 import { showResultModal as showOptimalResultModal } from "../resultModal.js"; // <--- 이 라인 추가
 
@@ -210,10 +210,14 @@ function renderSetInfo(ranking) {
   if (ranking.factionCounts) {
     info += Object.entries(ranking.factionCounts)
       .filter(([, count]) => count >= 2)
-      .map(
-        ([faction, count]) =>
-          `<span class="faction-tag">${faction} x${count}</span>`
-      )
+      .map(([faction, count]) => {
+        // FACTION_ICONS 맵에서 아이콘 경로 가져오기
+        const iconPath = FACTION_ICONS[faction] || ""; // 알 수 없는 세력이면 빈 문자열
+        return `<span class="faction-tag" title="${faction}">
+                    <img src="${iconPath}" class="faction-icon" alt="${faction}">
+                    ${faction} x${count}
+                  </span>`;
+      })
       .join(" ");
   }
   return info;
