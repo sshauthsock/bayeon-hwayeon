@@ -1436,6 +1436,10 @@ table {
 /* Kakao ad placeholder */
 .kakao_ad_area {
     min-height: 30px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .modal .kakao_ad_area {
@@ -1449,6 +1453,18 @@ table {
     font-size: var(--text-sm);
     color: #999;
     padding: 10px 0;
+}
+
+#optimalModalContent .kakao_ad_area {
+    min-height: 50px;
+    width: 100%;
+    /* 너비는 100%로 설정되어 모달 너비에 따라 조절됩니다. */
+    max-width: 728px;
+    /* 최대 너비 제한 */
+    margin: var(--space-md) auto;
+    background-color: var(--bg-gray);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
 }
 
 /* Buttons */

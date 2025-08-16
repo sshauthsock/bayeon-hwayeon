@@ -5,8 +5,9 @@ import { getHistoryForCategory } from "./historyManager.js";
 import { state as globalState } from "./state.js";
 import { FACTION_ICONS, STATS_MAPPING, PERCENT_STATS } from "./constants.js";
 
-let activeModal = null;
+let activeModal = null; // 현재 활성화된 모달 요소를 추적
 
+// 강조할 주요 스탯과 해당 CSS 클래스 매핑
 const SPECIAL_STAT_CLASSES = {
   damageResistance: "stat-damage-resistance",
   damageResistancePenetration: "stat-damage-resistance-penetration",
@@ -14,17 +15,22 @@ const SPECIAL_STAT_CLASSES = {
   pvpDamagePercent: "stat-pvp-damage-percent",
 };
 
+/**
+ * 값을 숫자로 안전하게 파싱하고 콤마를 제거하며, NaN 처리합니다.
+ * @param {any} value - 변환할 값
+ * @returns {number} 숫자로 변환된 값 (NaN일 경우 0)
+ */
 function ensureNumber(value) {
   if (value === undefined || value === null) return 0;
   const num = parseFloat(String(value).replace(/,/g, ""));
   return isNaN(num) ? 0 : num;
 }
 
-// --- renderEffects 함수 재추가 시작 ---
 /**
  * 특정 효과 섹션 (등급, 세력, 장착)을 렌더링합니다.
- * @param {string} elementId - 효과가 렌더링될 DOM 요소의 ID
- * @param {string} title - 섹션 제목
+ * 이 함수는 `updateResultView` 함수보다 먼저 정의되어야 합니다.
+ * @param {string} elementId - 효과가 렌더링될 DOM 요소의 ID (예: "optimalGradeEffects")
+ * @param {string} title - 섹션 제목 (예: "등급 효과")
  * @param {Array<object>} effects - 표시할 효과 데이터 배열 (예: [{key: "damage", name: "피해", value: 10}])
  * @param {number} score - 해당 섹션의 총 점수
  * @param {object} [counts={}] - 등급 또는 세력별 카운트 정보 (세트 효과 표시용)
@@ -36,7 +42,7 @@ function renderEffects(elementId, title, effects, score, counts = {}) {
   let setInfoHtml = "";
   if (counts.gradeCounts) {
     setInfoHtml = Object.entries(counts.gradeCounts)
-      .filter(([, count]) => count >= 2)
+      .filter(([, count]) => count >= 2) // 2개 이상일 때만 표시
       .map(
         ([grade, count]) =>
           `<span class="grade-tag grade-tag-${
@@ -46,9 +52,9 @@ function renderEffects(elementId, title, effects, score, counts = {}) {
       .join(" ");
   } else if (counts.factionCounts) {
     setInfoHtml = Object.entries(counts.factionCounts)
-      .filter(([, count]) => count >= 2)
+      .filter(([, count]) => count >= 2) // 2개 이상일 때만 표시
       .map(([faction, count]) => {
-        const iconPath = FACTION_ICONS[faction] || "";
+        const iconPath = FACTION_ICONS[faction] || ""; // constants.js에서 FACTION_ICONS 임포트 필요
         return `<span class="faction-tag" title="${faction}"><img src="${iconPath}" class="faction-icon" alt="${faction}">x${count}</span>`;
       })
       .join(" ");
@@ -61,11 +67,15 @@ function renderEffects(elementId, title, effects, score, counts = {}) {
   if (validEffects.length > 0) {
     effectsListHtml = `<ul class="effects-list">${validEffects
       .map((stat) => {
+        // stat.key가 PERCENT_STATS에 포함되는지 확인하여 % 붙임
         const isPercent = PERCENT_STATS.includes(stat.key);
         const displayValue = isPercent
-          ? `${ensureNumber(stat.value)}%`
-          : ensureNumber(stat.value).toLocaleString();
+          ? `${ensureNumber(stat.value)}%` // 퍼센트 스탯
+          : ensureNumber(stat.value).toLocaleString(); // 일반 숫자 스탯 (콤마 포함)
+
+        // 특정 스탯에 대한 하이라이트 클래스 적용
         const highlightClass = SPECIAL_STAT_CLASSES[stat.key] || "";
+
         return `<li class="${highlightClass}"><span class="stat-name">${stat.name}</span><span class="stat-value">${displayValue}</span></li>`;
       })
       .join("")}</ul>`;
@@ -79,10 +89,13 @@ function renderEffects(elementId, title, effects, score, counts = {}) {
         <div class="effects-content">${effectsListHtml}</div>
     `;
 }
-// --- renderEffects 함수 재추가 종료 ---
 
+/**
+ * 모달의 기본 구조를 생성하고 기존 모달을 제거합니다.
+ * @returns {{modal: HTMLElement, content: HTMLElement}} 생성된 모달과 콘텐츠 요소
+ */
 function createBaseModal() {
-  removeAllModals();
+  removeAllModals(); // 현재 열려있는 모달이 있다면 닫기
   const modal = createElement("div", "modal-overlay", { id: "optimalModal" });
   const content = createElement("div", "modal-content", {
     id: "optimalModalContent",
@@ -92,22 +105,25 @@ function createBaseModal() {
     text: "✕",
   });
 
-  content.appendChild(closeButton);
-  modal.appendChild(content);
-  document.body.appendChild(modal);
+  content.appendChild(closeButton); // 닫기 버튼을 콘텐츠에 추가
+  modal.appendChild(content); // 콘텐츠를 모달에 추가
+  document.body.appendChild(modal); // 모달을 body에 추가
 
-  closeButton.onclick = removeAllModals;
+  // 이벤트 리스너 설정
+  closeButton.onclick = removeAllModals; // 닫기 버튼 클릭 시 모달 닫기
   modal.addEventListener("click", (e) => {
+    // 모달 오버레이 외부 클릭 시 모달 닫기
     if (e.target === modal) removeAllModals();
   });
 
+  // ESC 키로 모달 닫기
   const escListener = (e) => {
     if (e.key === "Escape") removeAllModals();
   };
   document.addEventListener("keydown", escListener);
-  modal._escListener = escListener;
+  modal._escListener = escListener; // 이벤트 리스너 참조 저장 (제거 위함)
 
-  activeModal = modal;
+  activeModal = modal; // 현재 활성 모달로 설정
   return { modal, content };
 }
 
@@ -125,10 +141,35 @@ export function showResultModal(result, isFromRanking = false) {
     alert("계산 결과 데이터가 올바르지 않습니다.");
     return;
   }
-  const { modal, content } = createBaseModal();
-  modal.style.display = "flex";
-  document.body.style.overflow = "hidden";
-  renderResultContent(result, content, isFromRanking);
+  const { modal, content } = createBaseModal(); // 모달 기본 구조 생성
+  modal.style.display = "flex"; // 모달 표시
+  document.body.style.overflow = "hidden"; // 배경 스크롤 방지
+
+  renderResultContent(result, content, isFromRanking); // 모달 콘텐츠 렌더링
+
+  // --- 카카오 광고 로드 로직 (모달 열린 후) ---
+  setTimeout(() => {
+    try {
+      // kakao AdFit 스크립트가 로드되어 window.adfit 객체가 존재하는지 확인
+      if (window.adfit && typeof window.adfit.render === "function") {
+        // 모달 내 모든 kakao_ad_area 인스턴스를 찾아서 렌더링
+        const adContainers = document.querySelectorAll(
+          "#optimalModalContent .kakao_ad_area"
+        );
+        adContainers.forEach((adElement) => {
+          window.adfit.render(adElement);
+        });
+        console.log("Kakao AdFit: Ads re-rendered in modal.");
+      } else {
+        console.warn(
+          "Kakao AdFit script (window.adfit) not yet loaded or not available."
+        );
+      }
+    } catch (error) {
+      console.error("Kakao AdFit: Error rendering ads in modal:", error);
+    }
+  }, 100); // 짧은 딜레이를 주어 DOM 렌더링 완료 대기 (필요시 조정)
+  // --- 카카오 광고 로드 로직 끝 ---
 }
 
 /**
@@ -138,10 +179,13 @@ export function showResultModal(result, isFromRanking = false) {
  * @param {boolean} isFromRanking - 랭킹 페이지에서 호출되었는지 여부
  */
 function renderResultContent(result, container, isFromRanking) {
-  container.innerHTML = ""; // 기존 내용 초기화
+  // container.innerHTML = ""; // <--- 이 라인은 createBaseModal에서 이미 content를 비우고 닫기버튼을 추가했으므로,
+  //      여기서 다시 비우면 닫기 버튼이 사라집니다. 제거해야 합니다.
+  //      다만, 이 라인이 ReferenceError의 직접적인 원인은 아니었습니다.
 
-  const closeButton = createElement("button", "modal-close", { text: "✕" });
-  closeButton.onclick = removeAllModals;
+  // 닫기 버튼은 createBaseModal에서 이미 추가했으므로, 여기서 다시 생성할 필요 없습니다.
+  // const closeButton = createElement("button", "modal-close", { text: "✕" });
+  // closeButton.onclick = removeAllModals;
 
   const headerDiv = createElement("div", "optimal-header", {
     id: "optimalHeader",
@@ -161,8 +205,18 @@ function renderResultContent(result, container, isFromRanking) {
     id: "optimalSpiritsDetails",
   });
 
-  // 필수 요소 먼저 추가
-  container.append(closeButton, headerDiv);
+  // 카카오 광고 단위 추가 (요청하신 정보로 업데이트)
+  const kakaoAdModal = createElement("ins", "kakao_ad_area", {
+    style: "display:none; margin: 10px auto;",
+    "data-ad-unit": "DAN-bwZLqrZLwsCZMMPu", // 당신의 광고 단위 ID로 교체!
+    "data-ad-width": "728",
+    "data-ad-height": "90",
+  });
+
+  container.appendChild(kakaoAdModal);
+  // 이제 closeButton은 createBaseModal에서 이미 container에 추가되었습니다.
+  // 그래서 renderResultContent에서는 headerDiv부터 append 하면 됩니다.
+  container.append(headerDiv); // <--- closeButton 다음에 headerDiv부터 추가
 
   // isFromRanking이 false일 때만 historyContainer를 생성하고 추가합니다.
   if (!isFromRanking) {
@@ -180,7 +234,6 @@ function renderResultContent(result, container, isFromRanking) {
 
   // isFromRanking이 false일 때만 기록 탭을 렌더링합니다.
   if (!isFromRanking) {
-    // result.spirits가 비어있을 경우 오류 방지
     if (result.spirits && result.spirits.length > 0 && result.spirits[0].type) {
       renderHistoryTabs(result.spirits[0].type);
     } else {
@@ -188,7 +241,6 @@ function renderResultContent(result, container, isFromRanking) {
         "History cannot be rendered: missing spirit type in result.",
         result
       );
-      // 기록 탭이 존재한다면, 빈 메시지라도 표시
       const historyContainer = document.getElementById("historyContainer");
       if (historyContainer) {
         historyContainer.innerHTML = `<p class="no-history-message">기록을 불러올 수 없습니다.</p>`;
@@ -209,7 +261,7 @@ function updateResultView(result, isFromRanking) {
     bindScore,
     gradeEffects,
     factionEffects,
-    bindStats,
+    bindStats, // 이전에 bindStats가 undefined였던 문제 해결 필요 (백엔드 또는 api.js 변환)
     spirits,
   } = result;
 
@@ -275,13 +327,15 @@ function updateResultView(result, isFromRanking) {
 
   // 모달 하단 상세 테이블 (spirits 데이터 활용)
   renderSpiritDetailsTable(spirits);
+
+  // 기록 탭은 renderResultContent에서 조건부로 처리하므로 여기서 호출하지 않습니다.
 }
 
 // --- renderHistoryTabs 함수 ---
 function renderHistoryTabs(category) {
   const history = getHistoryForCategory(category);
   const container = document.getElementById("historyContainer");
-  if (!container) return;
+  if (!container) return; // container가 존재하지 않으면 (isFromRanking이 true인 경우) 바로 반환
 
   if (history.length === 0) {
     container.innerHTML = `<p class="no-history-message">${category} 카테고리에 저장된 기록이 없습니다.</p>`;
@@ -348,7 +402,7 @@ function renderHistoryTabs(category) {
       const clickedId = parseInt(tab.dataset.historyId, 10);
       const selectedEntry = history.find((entry) => entry.id === clickedId);
       if (selectedEntry) {
-        updateResultView(selectedEntry, false); // <--- 여기도 isFromRanking을 false로 전달
+        updateResultView(selectedEntry, false); // isFromRanking을 false로 전달
       }
     });
   });
@@ -366,7 +420,9 @@ function renderSpiritDetailsTable(spirits) {
     );
     if (!fullSpiritData) return;
 
-    const actualLevel = spirit.stats?.[0]?.level || 25;
+    // spirits 배열의 level 필드를 사용하여 스탯 데이터를 찾습니다.
+    // spirit.stats?.[0]?.level 대신 spirit.level을 직접 사용합니다.
+    const actualLevel = spirit.level || 25; // spirit.level이 없으면 기본 25
     const levelStats = fullSpiritData.stats.find(
       (s) => s.level === actualLevel
     );
@@ -411,7 +467,8 @@ function renderSpiritDetailsTable(spirits) {
       const fullSpiritData = globalState.allSpirits.find(
         (s) => s.name === spirit.name && s.type === spirit.type
       );
-      const actualLevel = spirit.stats?.[0]?.level || 25;
+      // spirit.level을 사용하여 스탯 데이터를 찾습니다.
+      const actualLevel = spirit.level || 25; // spirit.level이 없으면 기본 25
       const levelStats = fullSpiritData?.stats.find(
         (s) => s.level === actualLevel
       );
@@ -451,5 +508,5 @@ export function removeAllModals() {
     activeModal.remove();
     activeModal = null;
   }
-  document.body.style.overflow = "auto";
+  document.body.style.overflow = "auto"; // 배경 스크롤 복원
 }
