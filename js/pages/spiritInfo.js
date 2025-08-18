@@ -35,6 +35,11 @@ function getHTML() {
         </label>
         <span class="toggle-label">세력별 보기</span>
         <div class="stat-filter-container"></div>
+        <a href="https://open.kakao.com/o/sUSXtUYe" target="_blank" class="kakao-gift-btn">
+            <img src="assets/img/gift.png" alt="카카오 선물하기 아이콘"
+                style="height: 20px; vertical-align: middle; margin-right: 5px;">
+            개발자에게 카톡 선물하기
+        </a>
     </div>
     <div id="spiritGridContainer"></div>
     `;

@@ -47,7 +47,7 @@ function createImageWrapper(spirit, getSpiritState) {
   // 25레벨 장착 정보 존재 시 인디케이터 표시
   if (state.level25BindAvailable) {
     const level25Indicator = createElement("div", "level25-indicator");
-    level25Indicator.innerHTML = `<span>Lv.25<br>완료</span>`;
+    // level25Indicator.innerHTML = `<span>Lv.25<br>완료</span>`;
     imgBox.appendChild(level25Indicator);
   }
 

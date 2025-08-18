@@ -206,14 +206,40 @@ function renderResultContent(result, container, isFromRanking) {
   });
 
   // 카카오 광고 단위 추가 (요청하신 정보로 업데이트)
-  const kakaoAdModal = createElement("ins", "kakao_ad_area", {
-    style: "display:none; margin: 10px auto;",
-    "data-ad-unit": "DAN-bwZLqrZLwsCZMMPu", // 당신의 광고 단위 ID로 교체!
-    "data-ad-width": "728",
-    "data-ad-height": "90",
-  });
+  const kakaoAdResultModalDesktop = createElement(
+    "div",
+    "kakao-ad-modal-container desktop-modal-ad",
+    {
+      // style: "display:none;" // <--- 이 인라인 스타일 제거! CSS로 제어
+    }
+  );
+  // ins 태그 자체에 style을 제거하고 클래스만 유지
+  // <script> 태그는 index.html에 있으므로 여기서 추가하지 않음!
+  kakaoAdResultModalDesktop.innerHTML = `
+      <ins class="kakao_ad_area"
+          data-ad-unit="DAN-bwZLqrZLwsCZMMPu"
+          data-ad-width="728"
+          data-ad-height="90"></ins>
+  `;
+  container.appendChild(kakaoAdResultModalDesktop);
 
-  container.appendChild(kakaoAdModal);
+  // 모바일 전용 광고 컨테이너 (320x50)
+  const kakaoAdResultModalMobile = createElement(
+    "div",
+    "kakao-ad-modal-container mobile-modal-ad",
+    {
+      // style: "display:none;" // <--- 이 인라인 스타일 제거! CSS로 제어
+    }
+  );
+  // ins 태그 자체에 style을 제거하고 클래스만 유지
+  // <script> 태그는 index.html에 있으므로 여기서 추가하지 않음!
+  kakaoAdResultModalMobile.innerHTML = `
+      <ins class="kakao_ad_area"
+          data-ad-unit="DAN-wS76LEpUOnrNUa0L"
+          data-ad-width="320"
+          data-ad-height="50"></ins>
+  `;
+  container.appendChild(kakaoAdResultModalMobile);
   // 이제 closeButton은 createBaseModal에서 이미 container에 추가되었습니다.
   // 그래서 renderResultContent에서는 headerDiv부터 append 하면 됩니다.
   container.append(headerDiv); // <--- closeButton 다음에 headerDiv부터 추가

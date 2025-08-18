@@ -156,6 +156,21 @@ async function route() {
     hideLoading(); // 로딩 성공/실패와 관계없이 로딩 인디케이터 숨김
   }
 }
+const footerReportBtn = document.querySelector(".footer-report-btn");
+
+if (footerReportBtn && typeof gtag === "function") {
+  footerReportBtn.addEventListener("click", () => {
+    gtag("event", "interaction", {
+      event_category: "footer_action",
+      event_label: "Report Button Click",
+      event_action: "Click",
+      link_url: "https://open.kakao.com/o/gZdiGDsh", // 클릭된 링크 URL
+      page_location: window.location.href,
+      page_title: document.title,
+    });
+    console.log("GA4: Report button click event sent.");
+  });
+}
 
 // 메인 탭 클릭 이벤트 리스너
 mainTabs.addEventListener("click", (e) => {

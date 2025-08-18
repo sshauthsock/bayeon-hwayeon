@@ -72,3 +72,10 @@ export const PERCENT_STATS = [
   "magicIncreasePercent", // chakCalculator에서 사용
   "destructionPowerPercent", // chakCalculator에서 사용
 ];
+
+export const EFFECTIVE_STATS = [
+  "damageResistance",
+  "damageResistancePenetration",
+  "pvpDamagePercent",
+  "pvpDefensePercent",
+];
