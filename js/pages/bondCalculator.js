@@ -1,5 +1,3 @@
-// js/pages/bondCalculator.js
-
 import { state as globalState } from "../state.js";
 import * as api from "../api.js";
 import { createElement } from "../utils.js";
@@ -12,16 +10,13 @@ import { createStatFilter } from "../components/statFilter.js";
 import { INFLUENCE_ROWS, GRADE_ORDER, STATS_MAPPING } from "../constants.js";
 
 const pageState = {
-  currentCategory: "수호", // 현재 선택된 환수 카테고리 (수호, 탑승, 변신)
-  selectedSpirits: new Map(), // 선택된 환수 Map<name, {spiritData, level}>
-  groupByInfluence: false, // 세력별로 그룹화할지 여부
-  currentStatFilter: "", // 현재 적용된 스탯 필터 키
+  currentCategory: "수호",
+  selectedSpirits: new Map(),
+  groupByInfluence: false,
+  currentStatFilter: "",
 };
-const elements = {}; // DOM 요소를 저장할 객체
+const elements = {};
 
-/**
- * 페이지의 기본 HTML 구조를 반환합니다.
- */
 function getHTML() {
   return `
     <div class="sub-tabs" id="bondCategoryTabs">
@@ -29,13 +24,19 @@ function getHTML() {
         <div class="tab" data-category="탑승">탑승</div>
         <div class="tab" data-category="변신">변신</div>
     </div>
+
     <div class="view-toggle-container">
         <label class="toggle-switch">
             <input type="checkbox" id="influenceToggle">
             <span class="slider round"></span>
         </label>
         <span class="toggle-label">세력별 보기</span>
-        <div class="stat-filter-container"></div> <!-- 스탯 필터가 렌더링될 곳 -->
+        <div class="stat-filter-container"></div>
+        <a href="https://open.kakao.com/o/sUSXtUYe" target="_blank" class="kakao-gift-btn">
+            <img src="assets/img/gift.png" alt="카카오 선물하기 아이콘"
+                style="height: 20px; vertical-align: middle; margin-right: 5px;">
+            개발자에게 카톡 선물하기
+        </a>
     </div>
     <div class="bond-container">
         <div class="main-content">
@@ -71,34 +72,25 @@ function getHTML() {
     </div>`;
 }
 
-/**
- * 모든 UI 구성 요소를 렌더링합니다.
- */
 function renderAll() {
-  renderSpiritList(); // 전체 환수 목록 렌더링
-  renderSelectedList(); // 선택된 환수 목록 렌더링
-  saveStateToStorage(); // 현재 상태를 로컬 스토리지에 저장
+  renderSpiritList();
+  renderSelectedList();
+  saveStateToStorage();
 }
 
-/**
- * 전체 환수 목록을 렌더링합니다. 필터 및 정렬이 적용됩니다.
- */
 function renderSpiritList() {
-  let spirits = getSpiritsForCurrentState(); // 현재 카테고리에 맞는 환수 가져오기
+  let spirits = getSpiritsForCurrentState();
   if (pageState.currentStatFilter) {
-    // 스탯 필터가 적용되어 있다면 필터링
     spirits = spirits.filter((spirit) =>
       checkItemForStatEffect(spirit, pageState.currentStatFilter)
     );
   }
 
-  // spiritGrid 컴포넌트 사용하여 목록 렌더링
   renderSpiritGrid({
     container: elements.spiritListContainer,
     spirits: spirits,
     onSpiritClick: handleSpiritSelect,
     getSpiritState: (spirit) => {
-      // 각 환수의 상태를 반환 (선택 여부, 완료 여부 등)
       const { hasFullRegistration, hasFullBind, hasLevel25Bind } =
         checkSpiritStats(spirit);
       return {
@@ -112,17 +104,12 @@ function renderSpiritList() {
   });
 }
 
-/**
- * 현재 페이지 상태(카테고리)에 따라 환수 목록을 필터링하고 정렬합니다.
- * @returns {Array<object>} 필터링 및 정렬된 환수 배열
- */
 function getSpiritsForCurrentState() {
   const extractNumber = (path) =>
     path ? parseInt(path.match(/\d+/)?.[0] || "999", 10) : 999;
   const filtered = globalState.allSpirits.filter(
     (s) => s.type === pageState.currentCategory
   );
-  // 등급 (불멸 -> 전설) 및 이미지 경로의 숫자 순으로 정렬
   filtered.sort((a, b) => {
     const gradeOrder = { 전설: 1, 불멸: 2 };
     const orderA = gradeOrder[a.grade] || 99;
@@ -133,31 +120,43 @@ function getSpiritsForCurrentState() {
   return filtered;
 }
 
-/**
- * 선택된 환수 목록을 렌더링합니다.
- */
 function renderSelectedList() {
   const container = elements.selectedSpiritsList;
-  container.innerHTML = ""; // 기존 목록 비우기
+  container.innerHTML = "";
 
-  // 현재 카테고리에 해당하는 선택된 환수만 필터링
   const currentCategorySpirits = [...pageState.selectedSpirits.values()].filter(
     (s) => s.type === pageState.currentCategory
   );
-  elements.selectedCount.textContent = currentCategorySpirits.length; // 선택된 환수 개수 업데이트
+  elements.selectedCount.textContent = currentCategorySpirits.length;
+
+  const mobileSelectedCountSpan = document.getElementById(
+    "mobileSelectedCount"
+  );
+  if (mobileSelectedCountSpan) {
+    mobileSelectedCountSpan.textContent = currentCategorySpirits.length;
+  }
+
+  const mobileSelectedSpiritsContainer = document.getElementById(
+    "selectedSpiritsMobile"
+  );
+  if (mobileSelectedSpiritsContainer) {
+    mobileSelectedSpiritsContainer.innerHTML = "";
+  }
 
   if (currentCategorySpirits.length === 0) {
     container.innerHTML =
       "<p class='text-center text-sm text-light mt-lg'>선택된 환수가 없습니다.</p>";
+    if (mobileSelectedSpiritsContainer) {
+      mobileSelectedSpiritsContainer.innerHTML =
+        "<p class='text-center text-sm text-light mt-lg'>선택된 환수가 없습니다.</p>";
+    }
     return;
   }
 
-  // 각 선택된 환수 카드 렌더링
   currentCategorySpirits.forEach((spirit) => {
     const card = createElement("div", "selected-spirit-card", {
       "data-spirit-name": spirit.name,
     });
-
     card.innerHTML = `
         <button class="remove-spirit" data-action="remove" title="선택 해제">×</button>
         <div class="selected-spirit-header">
@@ -175,34 +174,35 @@ function renderSelectedList() {
         </div>
         `;
     container.appendChild(card);
+
+    if (mobileSelectedSpiritsContainer) {
+      const mobileCard = createElement("div", "selected-spirit-card", {
+        "data-spirit-name": spirit.name,
+      });
+      mobileCard.innerHTML = card.innerHTML;
+      mobileSelectedSpiritsContainer.appendChild(mobileCard);
+    }
   });
 }
 
-/**
- * 현재 페이지 상태를 로컬 스토리지에 저장합니다.
- */
 function saveStateToStorage() {
   localStorage.setItem(
     "bondCalculatorState",
     JSON.stringify({
       category: pageState.currentCategory,
       spirits: [...pageState.selectedSpirits.values()],
-      groupByInfluence: pageState.groupByInfluence, // 토글 상태 저장
-      currentStatFilter: pageState.currentStatFilter, // 필터 상태 저장
+      groupByInfluence: pageState.groupByInfluence,
+      currentStatFilter: pageState.currentStatFilter,
     })
   );
 }
 
-/**
- * 로컬 스토리지에서 저장된 페이지 상태를 로드합니다.
- */
 function loadStateFromStorage() {
   const savedState = localStorage.getItem("bondCalculatorState");
   if (savedState) {
     try {
       const data = JSON.parse(savedState);
       pageState.currentCategory = data.category || "수호";
-      // Map으로 다시 변환
       pageState.selectedSpirits = new Map(
         (data.spirits || []).map((s) => [s.name, s])
       );
@@ -210,16 +210,13 @@ function loadStateFromStorage() {
       pageState.currentStatFilter = data.currentStatFilter || "";
     } catch (e) {
       console.error("Error loading state from storage, resetting:", e);
-      pageState.selectedSpirits = new Map(); // 오류 발생 시 초기화
+      pageState.selectedSpirits = new Map();
       pageState.groupByInfluence = false;
       pageState.currentStatFilter = "";
     }
   }
 }
 
-/**
- * 스탯 필터 드롭다운을 초기화하고 이벤트 리스너를 설정합니다.
- */
 function initStatFilter() {
   const filterContainer = elements.container.querySelector(
     ".stat-filter-container"
@@ -243,9 +240,30 @@ function initStatFilter() {
   }
 }
 
-/**
- * 모든 이벤트 리스너를 설정합니다.
- */
+function onPanelToggleBtnClick() {
+  const panelToggleContainer = document.getElementById("panelToggleContainer");
+  const rightPanelInToggle = panelToggleContainer
+    ? panelToggleContainer.querySelector(".right-panel")
+    : null;
+  if (rightPanelInToggle) {
+    rightPanelInToggle.classList.toggle("collapsed");
+    panelToggleContainer.querySelector(".toggle-icon").textContent =
+      rightPanelInToggle.classList.contains("collapsed") ? "▲" : "▼";
+  }
+}
+
+function onApplyMobileBatchLevelClick() {
+  handleBatchLevel("mobileBatchLevel");
+}
+
+function onSetMaxMobileBatchLevelClick() {
+  setMaxBatchLevel("mobileBatchLevel");
+}
+
+function onFindOptimalMobileClick() {
+  handleFindOptimal();
+}
+
 function setupEventListeners() {
   elements.container.addEventListener("click", handleContainerClick);
   elements.influenceToggle.addEventListener("change", handleToggleChange);
@@ -255,12 +273,46 @@ function setupEventListeners() {
   );
   elements.selectAllBtn.addEventListener("click", handleSelectAll);
   elements.clearAllSelectionBtn.addEventListener("click", handleClearSelection);
+  elements.applyBatchLevelBtn.addEventListener("click", () =>
+    handleBatchLevel("batchLevelInput")
+  );
+  elements.findOptimalBtn.addEventListener("click", handleFindOptimal);
+
+  const panelToggleBtn = document.getElementById("panelToggleBtn");
+  const mobileSelectedSpiritsList = document.getElementById(
+    "selectedSpiritsMobile"
+  );
+  const applyMobileBatchLevelBtn = document.getElementById(
+    "applyMobileBatchLevelBtn"
+  );
+  const setMaxMobileBatchLevelBtn = document.getElementById(
+    "setMaxMobileBatchLevelBtn"
+  );
+  const findOptimalMobileBtn = document.getElementById("findOptimalMobileBtn");
+
+  if (panelToggleBtn) {
+    panelToggleBtn.addEventListener("click", onPanelToggleBtnClick);
+  }
+  if (mobileSelectedSpiritsList) {
+    mobileSelectedSpiritsList.addEventListener("input", handleLevelInputChange);
+  }
+  if (applyMobileBatchLevelBtn) {
+    applyMobileBatchLevelBtn.addEventListener(
+      "click",
+      onApplyMobileBatchLevelClick
+    );
+  }
+  if (setMaxMobileBatchLevelBtn) {
+    setMaxMobileBatchLevelBtn.addEventListener(
+      "click",
+      onSetMaxMobileBatchLevelClick
+    );
+  }
+  if (findOptimalMobileBtn) {
+    findOptimalMobileBtn.addEventListener("click", onFindOptimalMobileClick);
+  }
 }
 
-/**
- * 환수 선택/해제 로직을 처리합니다.
- * @param {object} spirit - 선택/해제할 환수 데이터
- */
 function handleSpiritSelect(spirit) {
   if (!spirit) return;
   const spiritName = spirit.name;
@@ -273,9 +325,6 @@ function handleSpiritSelect(spirit) {
   renderAll();
 }
 
-/**
- * 컨테이너 내의 클릭 이벤트를 처리합니다. (탭, 버튼 등)
- */
 function handleContainerClick(e) {
   const target = e.target;
   const subTab = target.closest("#bondCategoryTabs .tab");
@@ -289,7 +338,8 @@ function handleContainerClick(e) {
     return;
   }
 
-  if (target.matches("#applyBatchLevelBtn")) handleBatchLevel();
+  if (target.matches("#applyBatchLevelBtn"))
+    handleBatchLevel("batchLevelInput");
   else if (target.matches("#findOptimalBtn")) handleFindOptimal();
 
   const card = target.closest(".selected-spirit-card");
@@ -338,18 +388,12 @@ function handleContainerClick(e) {
   }
 }
 
-/**
- * 세력별 보기 토글 변경 이벤트를 처리합니다.
- */
 function handleToggleChange(e) {
   pageState.groupByInfluence = e.target.checked;
   saveStateToStorage();
   renderSpiritList();
 }
 
-/**
- * 선택된 환수 목록에서 레벨 입력 변경 이벤트를 처리합니다.
- */
 function handleLevelInputChange(e) {
   if (e.target.matches(".level-input")) {
     const card = e.target.closest(".selected-spirit-card");
@@ -365,9 +409,6 @@ function handleLevelInputChange(e) {
   }
 }
 
-/**
- * 현재 탭의 모든 환수를 해제합니다.
- */
 function handleClearSelection() {
   const spiritsInCurrentCategory = getSpiritsForCurrentState();
   spiritsInCurrentCategory.forEach((s) => {
@@ -378,9 +419,6 @@ function handleClearSelection() {
   renderAll();
 }
 
-/**
- * 현재 탭의 모든 환수를 선택합니다.
- */
 function handleSelectAll() {
   const spiritsToSelect = getSpiritsForCurrentState();
   spiritsToSelect.forEach((spirit) => {
@@ -391,11 +429,9 @@ function handleSelectAll() {
   renderAll();
 }
 
-/**
- * 선택된 환수들의 레벨을 일괄 변경합니다.
- */
-function handleBatchLevel() {
-  const batchLevel = parseInt(elements.batchLevelInput.value, 10);
+function handleBatchLevel(inputId) {
+  const batchLevelInput = document.getElementById(inputId);
+  const batchLevel = parseInt(batchLevelInput.value, 10);
   if (isNaN(batchLevel) || batchLevel < 0 || batchLevel > 25) {
     alert("0에서 25 사이의 레벨을 입력해주세요.");
     return;
@@ -406,9 +442,14 @@ function handleBatchLevel() {
   renderAll();
 }
 
-/**
- * 최적 조합 계산을 요청하고 결과를 모달로 표시합니다.
- */
+function setMaxBatchLevel(inputId) {
+  const batchLevelInput = document.getElementById(inputId);
+  if (batchLevelInput) {
+    batchLevelInput.value = 25;
+    handleBatchLevel(inputId);
+  }
+}
+
 async function handleFindOptimal() {
   const creaturesForCalc = [...pageState.selectedSpirits.values()]
     .filter((s) => s.type === pageState.currentCategory)
@@ -441,12 +482,38 @@ async function handleFindOptimal() {
   }
 }
 
-/**
- * 페이지 초기화 함수.
- * @param {HTMLElement} container - 페이지 내용이 렌더링될 DOM 요소
- */
 export function init(container) {
   container.innerHTML = getHTML();
+
+  const panelToggleHtml = `
+    <button class="panel-toggle-button" id="panelToggleBtn">
+        선택된 환수 <span id="mobileSelectedCount">0</span>개 <span class="toggle-icon">▲</span>
+    </button>
+    <div class="right-panel collapsed">
+        <div class="selected-spirits-container">
+            <div class="selected-spirits-header">
+                <h3>선택된 환수</h3>
+                <div class="header-controls">
+                    <div class="level-batch-control">
+                        <label>일괄 레벨 설정:</label>
+                        <input type="number" id="mobileBatchLevel" min="0" max="25" value="0">
+                        <button id="applyMobileBatchLevelBtn" class="btn btn-primary apply-level-btn">적용</button>
+                        <button id="setMaxMobileBatchLevelBtn" class="btn btn-warning max-level-btn">Max</button>
+                    </div>
+                    <div class="calculate-btn-small">
+                        <button id="findOptimalMobileBtn" class="btn btn-secondary">찾기</button>
+                    </div>
+                </div>
+            </div>
+            <div id="selectedSpiritsMobile" class="selected-spirits"></div>
+        </div>
+    </div>`;
+
+  const panelToggleContainer = createElement("div", "panel-toggle-container", {
+    id: "panelToggleContainer",
+  });
+  panelToggleContainer.innerHTML = panelToggleHtml;
+  document.body.appendChild(panelToggleContainer);
 
   const el = elements;
   el.container = container;
@@ -477,10 +544,6 @@ export function init(container) {
   console.log("환수 결속 페이지 초기화 완료.");
 }
 
-/**
- * 이 페이지에 대한 도움말 콘텐츠 HTML을 반환합니다.
- * main.js에서 호출하여 도움말 툴팁에 주입됩니다.
- */
 export function getHelpContentHTML() {
   return `
         <div class="content-block">
@@ -508,8 +571,8 @@ export function getHelpContentHTML() {
 
             <h3>💡 결속 시스템 팁 & 전략</h3>
             <ul>
-                <li><strong>PvE와 PvP 조합:</strong> 보스 사냥을 위한 조합(피해저항관통, 보스몬스터추가피해)과 PvP를 위한 조합(대인방어%, 피해저항)은 스탯 우선순위가 다릅니다. 목표에 맞는 조합을 찾아보세요.</li>
-                <li><strong>등급 시너지 vs 세력 시너지:</strong> 전설/불멸 환수 갯수에 따른 등급 시너지와 같은 세력 환수 갯수에 따른 세력 시너지를 모두 고려하는 것이 중요합니다. 때로는 낮은 등급이라도 세력 시너지를 맞추는 것이 더 유리할 수 있습니다.</li>
+                <li><strong>PvE와 PvP 조합:</strong> 보스 사냥을 위한 조합(피해저항관통, 보스몬스터추가피해)과 PvP를 위한 조합(대인방어%, 피해저해)은 스탯 우선순위가 다릅니다. 목표에 맞는 조합을 찾아보세요.</li>
+                <li><strong>등급 시너지 vs 세력 시너지:</strong> 전설/불멸 환수 갯수에 따른 등급 시너지와 같은 세력 환수 갯수에 따른 세력 시너지을 모두 고려하는 것이 중요합니다. 때로는 낮은 등급이라도 세력 시너지를 맞추는 것이 더 유리할 수 있습니다.</li>
                 <li><strong>고레벨 환수의 중요성:</strong> 장착 효과는 환수 레벨에 따라 크게 증가하므로, 주요 환수는 25레벨까지 육성하는 것이 중요합니다.</li>
                 <li><strong>모든 환수 활용:</strong> 단순히 보유 환수 중 강한 환수 5마리를 고르는 것이 아니라, 결속 계산기를 통해 예상치 못한 조합이 더 좋은 결과를 낼 수도 있습니다.</li>
             </ul>
@@ -517,9 +580,6 @@ export function getHelpContentHTML() {
     `;
 }
 
-/**
- * 페이지 정리 함수.
- */
 export function cleanup() {
   if (elements.container) {
     elements.container.removeEventListener("click", handleContainerClick);
@@ -533,6 +593,7 @@ export function cleanup() {
       handleLevelInputChange
     );
   }
+
   if (elements.selectAllBtn) {
     elements.selectAllBtn.removeEventListener("click", handleSelectAll);
   }
@@ -542,5 +603,53 @@ export function cleanup() {
       handleClearSelection
     );
   }
+
+  elements.applyBatchLevelBtn.removeEventListener("click", () =>
+    handleBatchLevel("batchLevelInput")
+  );
+  elements.findOptimalBtn.removeEventListener("click", handleFindOptimal);
+
+  const panelToggleBtn = document.getElementById("panelToggleBtn");
+  const mobileSelectedSpiritsList = document.getElementById(
+    "selectedSpiritsMobile"
+  );
+  const applyMobileBatchLevelBtn = document.getElementById(
+    "applyMobileBatchLevelBtn"
+  );
+  const setMaxMobileBatchLevelBtn = document.getElementById(
+    "setMaxMobileBatchLevelBtn"
+  );
+  const findOptimalMobileBtn = document.getElementById("findOptimalMobileBtn");
+
+  if (panelToggleBtn) {
+    panelToggleBtn.removeEventListener("click", onPanelToggleBtnClick);
+  }
+  if (mobileSelectedSpiritsList) {
+    mobileSelectedSpiritsList.removeEventListener(
+      "input",
+      handleLevelInputChange
+    );
+  }
+  if (applyMobileBatchLevelBtn) {
+    applyMobileBatchLevelBtn.removeEventListener(
+      "click",
+      onApplyMobileBatchLevelClick
+    );
+  }
+  if (setMaxMobileBatchLevelBtn) {
+    setMaxMobileBatchLevelBtn.removeEventListener(
+      "click",
+      onSetMaxMobileBatchLevelClick
+    );
+  }
+  if (findOptimalMobileBtn) {
+    findOptimalMobileBtn.removeEventListener("click", onFindOptimalMobileClick);
+  }
+
+  const dynamicallyAddedPanel = document.getElementById("panelToggleContainer");
+  if (dynamicallyAddedPanel) {
+    dynamicallyAddedPanel.remove();
+  }
+
   console.log("환수 결속 페이지 정리 완료.");
 }

@@ -34,6 +34,11 @@ function getHTML() {
                 <button class="filter-btn active" data-type="bond">결속 랭킹</button>
                 <button class="filter-btn" data-type="stat">능력치 랭킹</button>
             </div>
+                    <a href="https://open.kakao.com/o/sUSXtUYe" target="_blank" class="kakao-gift-btn">
+            <img src="assets/img/gift.png" alt="카카오 선물하기 아이콘"
+                style="height: 20px; vertical-align: middle; margin-right: 5px;">
+            개발자에게 카톡 선물하기
+        </a>
         </div>
         <div class="filter-section" id="statSelectorContainer" style="display: none;">
             <label for="statSelector" class="filter-label">능력치:</label>

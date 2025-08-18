@@ -1536,6 +1536,15 @@ table {
     background-color: var(--color-warning-dark);
 }
 
+.btn-info {
+    background-color: var(--color-info);
+    color: var(--text-white);
+}
+
+.btn-info:hover {
+    background-color: var(--color-info-dark);
+}
+
 .btn-sm {
     padding: var(--radius-sm) 10px;
     font-size: var(--text-sm);
@@ -1603,6 +1612,10 @@ table {
     background-color: var(--color-warning);
     box-shadow: var(--shadow-btn-warning);
     width: 100%;
+}
+
+#findOptimalMobileBtn {
+    background-color: var(--color-warning);
 }
 
 #findOptimalBtn:hover {
@@ -1858,10 +1871,7 @@ table {
     gap: var(--space-sm);
 }
 
-.equipment-panel {
-    width: 100%;
-    height: 100%;
-}
+
 
 .level-panel {
     width: 100%;
@@ -1969,48 +1979,6 @@ table {
 .location-level {
     font-size: var(--text-sm);
     color: var(--text-secondary);
-}
-
-
-
-.selector-btn.active {
-    font-weight: bold;
-}
-
-.selector-btn.equip-btn.active {
-    background-color: var(--color-primary);
-    color: var(--text-white);
-    border-color: var(--color-primary);
-}
-
-.selector-btn.level-btn.active {
-    background-color: var(--color-success);
-    color: var(--text-white);
-    border-color: var(--color-success);
-}
-
-.selector-btn.active {
-    font-weight: bold;
-}
-
-.selector-btn.equip-btn.active {
-    background-color: var(--color-primary);
-    color: var(--text-white);
-    border-color: var(--color-primary);
-}
-
-.selector-btn.level-btn.active {
-    background-color: var(--color-success);
-    color: var(--text-white);
-    border-color: var(--color-success);
-}
-
-.summary-box {
-    padding: var(--space-md);
-    background-color: var(--bg-gray);
-    border-radius: var(--radius-md);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    width: 100%;
 }
 
 .summary-section {
@@ -2280,8 +2248,7 @@ input:checked+.toggle-slider:before {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 var(--space-md);
-    margin-bottom: var(--space-md);
+    padding: 15px;
     gap: var(--space-md);
     flex-wrap: nowrap;
     width: 100%;
@@ -2551,70 +2518,6 @@ input:checked+.toggle-slider:before {
     transform: scale(1.05);
 }
 
-/* .tabs {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-    height: 100%;
-}
-
-.tab {
-    padding: 14px var(--space-lg);
-    margin: 0 var(--radius-sm);
-    cursor: pointer;
-    transition: var(--transition-normal);
-    border-radius: var(--radius-md);
-    color: var(--text-white);
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.tab:hover {
-    color: rgba(255, 255, 255, 0.95);
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.tab.active {
-    color: var(--text-white);
-    font-weight: 500;
-    background-color: transparent;
-    position: relative;
-}
-
-.tab.active::before {
-    content: '';
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: var(--radius-round);
-    background-color: var(--color-primary);
-    opacity: 1;
-}
-
-.tab.active::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--color-primary), #2ecc71);
-    opacity: 0.85;
-}
-
-.tab.active {
-    background-image: linear-gradient(to bottom,
-            rgba(52, 152, 219, 0.1),
-            rgba(52, 152, 219, 0.05) 60%,
-            transparent);
-    backdrop-filter: blur(4px);
-} */
-
 .tabs {
     display: flex;
     align-items: center;
@@ -2665,7 +2568,6 @@ input:checked+.toggle-slider:before {
     position: relative;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     /* 활성 탭 그림자 */
-    /* background-image: linear-gradient(to bottom, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.05) 60%, transparent); */
     backdrop-filter: blur(4px);
     /* 블러 효과 유지 */
     border-color: var(--color-primary-dark);
@@ -2703,71 +2605,6 @@ input:checked+.toggle-slider:before {
     content: none;
     /* 제거 */
 }
-
-/* .sub-tabs {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    margin: 0;
-    padding: 4px 0;
-    gap: var(--radius-sm);
-    background-color: #f0f2f5;
-    position: -webkit-sticky;
-    position: sticky;
-    top: 55px;
-    z-index: 99;
-    width: 100%;
-}
-
-.sub-tabs .tab {
-    position: relative;
-    padding: 6px 12px;
-    min-width: 30%;
-    text-align: center;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: #2c3e50;
-    background-color: #f8f9fa;
-    border: none;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    box-shadow: 0px -1px 3px rgba(0, 0, 0, 0.08), 0px 1px 2px rgba(0, 0, 0, 0.05);
-    cursor: pointer;
-    transition: var(--transition-normal);
-    margin: 0 4px;
-}
-
-.sub-tabs .tab:hover {
-    color: #1565c0;
-    background-color: var(--color-primary-light);
-    box-shadow: 0 -2px 6px rgba(21, 101, 192, 0.15);
-    transform: translateY(-2px);
-}
-
-.sub-tabs .tab.active {
-    color: var(--text-white);
-    background-color: #1976d2;
-    box-shadow: 0 -2px 8px rgba(25, 118, 210, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
-    transform: translateY(-3px);
-    font-weight: 600;
-}
-
-.sub-tabs .tab:after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 6px solid #1976d2;
-    display: none;
-}
-
-.sub-tabs .tab.active:after {
-    display: block;
-} */
 
 .sub-tabs {
     display: flex;
@@ -2841,7 +2678,6 @@ input:checked+.toggle-slider:before {
     content: none;
     /* 제거 */
 }
-
 
 /* Help & Tooltips */
 .help-container {
@@ -3416,6 +3252,7 @@ input:checked+.toggle-slider:before {
 
 .stat-name {
     color: #555;
+    font-size: 10px;
 }
 
 .stat-value {
@@ -3693,6 +3530,17 @@ input:checked+.toggle-slider:before {
 .stats-list li:hover {
     background: #f5f9ff;
 }
+
+.stats-list li.stat-effective .stat-key,
+.stats-list li.stat-effective .stat-value {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.stats-list li.stat-highlight {
+    background-color: #fff3cd;
+}
+
 
 .stat-key {
     font-weight: 500;
@@ -4194,7 +4042,6 @@ tr.max-level {
     top: 0;
     z-index: var(--z-normal);
     white-space: nowrap;
-    min-width: 100px;
 }
 
 .spirits-stats-table thead tr {
@@ -4421,7 +4268,6 @@ tr.max-level {
     background-color: var(--color-secondary) !important;
     border-radius: 3px !important;
     width: 16px !important;
-    margin-left: 2px;
 }
 
 .fixed-level {
@@ -4617,12 +4463,6 @@ tr.max-level {
     gap: var(--space-lg);
     padding: 0 var(--space-lg);
     width: 100%;
-}
-
-.equipment-section {
-    flex: 0.45;
-    display: flex;
-    flex-direction: column;
 }
 
 .level-info-section {
@@ -6532,6 +6372,7 @@ tr.max-level {
 .section-title {
     font-weight: bold;
     margin-bottom: var(--space-sm);
+    margin-left: var(--space-lg);
     color: #333;
     border-bottom: 1px solid var(--border-medium);
     padding-bottom: var(--radius-sm);
@@ -6859,8 +6700,11 @@ tr.max-level {
 }
 
 .progress-container {
-    position: relative;
-    margin: var(--space-md) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    /* position: relative;
+    margin: var(--space-md) 0; */
 }
 
 .progress-bar-container {
@@ -7319,10 +7163,23 @@ input:focus {
     .container,
     .soul-container,
     .layout-container {
-        flex-direction: column;
+        /* flex-direction: column; */
         gap: var(--space-md);
         padding: 0 var(--space-sm);
         margin: var(--space-sm) auto;
+    }
+
+    .soul-container>.left {
+        order: 2;
+    }
+
+    .soul-container>.right {
+        order: 1;
+    }
+
+    .filter-section,
+    .filter-btn {
+        font-size: 9px;
     }
 
     .left,
@@ -7330,7 +7187,8 @@ input:focus {
     .equipment-section,
     .level-info-section {
         width: 100%;
-        min-width: 100%;
+        /* min-width: 100%; */
+        font-size: var(--text-sm);
     }
 
     .bond-container {
@@ -7374,6 +7232,7 @@ input:focus {
 
     .panel-toggle-container {
         display: flex;
+        pointer-events: auto;
     }
 
     #panelToggleContainer .right-panel {
@@ -7416,23 +7275,48 @@ input:focus {
 
     .tabs {
         justify-content: space-around;
+        flex-wrap: nowrap;
+        /* 탭이 줄바꿈되지 않도록 */
+        overflow-x: auto;
+        /* 넘칠 경우 가로 스크롤 */
+        -webkit-overflow-scrolling: touch;
+        /* 부드러운 스크롤 */
+        justify-content: flex-start;
+        /* 탭들을 왼쪽으로 정렬 */
     }
 
     .tab {
-        padding: 10px 12px;
-        margin: 0 3px;
-        font-size: var(--text-md);
-        min-width: auto;
+        flex-shrink: 0;
+        /* 탭이 줄어들지 않도록 */
+        padding: 10px 14px;
+        /* 모바일 패딩 조정 */
+        font-size: var(--text-sm);
+        /* 모바일 글꼴 크기 */
+        margin: 0 2px;
+        /* 마진 조정 */
+    }
+
+    .tab.active::after {
+        height: 3px;
+        /* 모바일 밑줄 두께 조정 */
     }
 
     .sub-tabs {
         top: 50px;
-        padding: 2px 0;
+        padding: 6px 0;
+        /* 모바일 서브탭 패딩 조정 */
+        flex-wrap: nowrap;
+        /* 서브탭도 줄바꿈되지 않도록 */
+        overflow-x: auto;
     }
 
     .sub-tabs .tab {
-        padding: 5px 10px;
-        font-size: var(--text-sm);
+        flex-shrink: 0;
+        padding: 6px 10px;
+        /* 모바일 서브탭 패딩 */
+        font-size: var(--text-xs);
+        /* 모바일 서브탭 글꼴 크기 */
+        margin: 0 2px;
     }
 
     .footer-desktop {
@@ -7496,7 +7380,7 @@ input:focus {
 
     .form-control {
         padding: 6px var(--space-sm);
-        font-size: var(--text-md);
+        font-size: var(--text-sm);
     }
 
     .level-batch-control {
@@ -7576,6 +7460,7 @@ input:focus {
 
     .spirit-level-control {
         margin: 5px 0;
+        width: 82%;
     }
 
     .spirit-level-control input {
@@ -7618,9 +7503,26 @@ input:focus {
         font-size: 8px;
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-sm);
+    .level-progress-container {
+        gap: 1px;
+    }
+
+    .level-progress-bar {
+        height: 2px;
+    }
+
+    .soul-item input {
+        font-size: var(--text-xs);
+    }
+
+    .selector-btn {
+        padding: var(--radius-sm) 3px;
+        font-size: var(--text-xs);
+        border-radius: var(--radius-sm);
+    }
+
+    .soul-item label {
+        font-size: var(--text-xs);
     }
 
     .stat-card {
@@ -7635,6 +7537,10 @@ input:focus {
 
     .stat-card p {
         font-size: var(--text-sm);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .value-display {
@@ -7802,7 +7708,7 @@ input:focus {
     }
 
     .ranking-table .faction-column {
-        display: none;
+        display: block;
     }
 
     .soul-container {
@@ -7810,7 +7716,7 @@ input:focus {
     }
 
     .calc-btn button {
-        width: 100%;
+        font-size: var(--text-sm)
     }
 
     .results-panel {
@@ -8180,7 +8086,7 @@ input:focus {
 
     .stat-value,
     .stat-key {
-        font-size: var(--text-xs) !important;
+        font-size: 9px !important;
     }
 
     .stats-sum {
@@ -8216,6 +8122,7 @@ input:focus {
     .spirit-modal-title-section h3 {
         font-size: var(--text-sm);
         margin-bottom: var(--radius-sm);
+        justify-content: center;
     }
 
     .tab-content span {
@@ -8246,7 +8153,7 @@ input:focus {
     }
 
     .selected-spirits {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
     }
 
     .spirit-selection {
@@ -8316,6 +8223,8 @@ input:focus {
         font-size: var(--text-xs);
         padding: 1px 6px;
     }
+
+
 }
 
 /* Specific Optimizations for larger breakpoints (min-width logic from chak.css) */
@@ -8334,6 +8243,7 @@ input:focus {
 .selection-controls {
     display: flex;
     gap: var(--space-sm);
+    margin-right: var(--space-sm);
 }
 
 .selection-controls .btn-sm {
@@ -8369,6 +8279,9 @@ input:focus {
     max-width: 1000px;
     /* 모달 너비 확장 */
     width: 95%;
+    padding-right: 45px;
+    /* 닫기 버튼 공간 확보 */
+    overflow-x: hidden;
 }
 
 /* Modal Header */
@@ -8380,10 +8293,12 @@ input:focus {
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-md);
     margin-bottom: var(--space-md);
+    position: relative;
+    /* 닫기 버튼과 겹치지 않도록 */
 }
 
 .modal-main-title {
-    font-size: var(--text-xl);
+    font-size: var(--text-md);
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
@@ -8512,7 +8427,8 @@ input:focus {
 /* Combination Spirits Grid */
 .combination-results-container {
     background-color: var(--bg-lighter);
-    padding: var(--space-sm);
+    padding: var(--space-md);
+    /* 그리드 주변에 여백 추가 */
     border-radius: var(--radius-md);
     margin-bottom: var(--space-lg);
 }
@@ -8521,6 +8437,8 @@ input:focus {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: var(--radius-sm);
+    justify-content: center;
+    /* 그리드 아이템이 남을 경우 중앙 정렬 */
 }
 
 .spirit-info-item {
@@ -8573,7 +8491,8 @@ input:focus {
 /* Effects Sections */
 .results-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    /* 화면 크기에 따라 1~3단으로 자동 조절, 각 컬럼의 최소 너비 280px */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--space-md);
     margin-bottom: var(--space-lg);
 }
@@ -8675,6 +8594,7 @@ input:focus {
 /* Spirit Details Table */
 .spirit-details-container {
     margin-top: var(--space-lg);
+    overflow: auto;
 }
 
 .spirit-details-container h4 {
@@ -8697,63 +8617,28 @@ input:focus {
 .spirits-stats-table th,
 .spirits-stats-table td {
     padding: 4px;
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
 }
 
 @media (max-width: 768px) {
     .results-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
-    .modal-header {
+    #optimalModal .modal-content {
+        padding-right: var(--space-md);
+        /* 모바일에서는 패딩 기본값으로 */
+    }
+
+    .optimal-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: var(--space-sm);
     }
 
     .spirits-grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        /* grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); */
     }
-}
-
-#optimalModal .modal-content {
-    padding-right: 45px;
-    /* 닫기 버튼 공간 확보 */
-}
-
-/* Modal Header */
-.optimal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--bg-gray);
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--space-md);
-    position: relative;
-    /* 닫기 버튼과 겹치지 않도록 */
-}
-
-/* Combination Spirits Grid */
-.combination-results-container {
-    background-color: var(--bg-lighter);
-    padding: var(--space-md);
-    /* 그리드 주변에 여백 추가 */
-    border-radius: var(--radius-md);
-    margin-bottom: var(--space-lg);
-}
-
-.spirits-grid-container {
-    justify-content: center;
-    /* 그리드 아이템이 남을 경우 중앙 정렬 */
-}
-
-/* Effects Sections */
-.results-container {
-    display: grid;
-    /* 화면 크기에 따라 1~3단으로 자동 조절, 각 컬럼의 최소 너비 280px */
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
 }
 
 /* Special Stat Highlighting */
@@ -8821,34 +8706,6 @@ input:focus {
 
 .spirits-stats-table tr.stat-pvp-damage-percent .stat-total {
     color: var(--color-warning-dark);
-}
-
-@media (max-width: 768px) {
-    .results-container {
-        grid-template-columns: 1fr;
-    }
-
-    #optimalModal .modal-content {
-        padding-right: var(--space-md);
-        /* 모바일에서는 패딩 기본값으로 */
-    }
-
-    .optimal-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-sm);
-    }
-}
-
-.btn-info {
-    background-color: var(--color-info);
-    /* 예: #2563eb */
-    color: var(--text-white);
-}
-
-.btn-info:hover {
-    background-color: var(--color-info-dark);
-    /* 예: #1d4ed8 */
 }
 
 /* 랭킹 테이블 내 '상세보기' 버튼의 크기 및 패딩 조정 */
@@ -8938,49 +8795,56 @@ input:focus {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.ad-container.mobile-kakao-ad {
+    display: none;
+}
+
+/* 모바일 환경 (최대 768px) */
 @media (max-width: 768px) {
-    .tabs {
-        flex-wrap: nowrap;
-        /* 탭이 줄바꿈되지 않도록 */
-        overflow-x: auto;
-        /* 넘칠 경우 가로 스크롤 */
-        -webkit-overflow-scrolling: touch;
-        /* 부드러운 스크롤 */
-        justify-content: flex-start;
-        /* 탭들을 왼쪽으로 정렬 */
+
+    /* 모바일에서는 데스크탑 광고 숨기기 */
+    .ad-container.desktop-kakao-ad {
+        display: none;
     }
 
-    .tab {
-        flex-shrink: 0;
-        /* 탭이 줄어들지 않도록 */
-        padding: 10px 14px;
-        /* 모바일 패딩 조정 */
-        font-size: var(--text-sm);
-        /* 모바일 글꼴 크기 */
-        margin: 0 2px;
-        /* 마진 조정 */
+    /* 모바일에서는 모바일 광고 보이기 */
+    .ad-container.mobile-kakao-ad {
+        display: flex;
+        /* .ad-container의 display 속성 */
     }
 
-    .tab.active::after {
-        height: 3px;
-        /* 모바일 밑줄 두께 조정 */
+    /* 모바일 광고 컨테이너의 최소 높이 조정 */
+    .ad-container {
+        min-height: 50px;
+        /* 모바일 배너 기준 높이 (예: 320x50, 320x100) */
+        margin: var(--space-sm) auto;
+        /* 모바일 마진 조정 */
+    }
+}
+
+.kakao-ad-modal-container.mobile-modal-ad {
+    display: none;
+}
+
+/* 모바일 환경 (최대 768px) */
+@media (max-width: 768px) {
+
+    /* 모바일에서는 데스크탑 광고 숨기기 */
+    .kakao-ad-modal-container.desktop-modal-ad {
+        display: none;
     }
 
-    .sub-tabs {
-        padding: 6px 0;
-        /* 모바일 서브탭 패딩 조정 */
-        flex-wrap: nowrap;
-        /* 서브탭도 줄바꿈되지 않도록 */
-        overflow-x: auto;
-        justify-content: flex-start;
+    /* 모바일에서는 모바일 광고 보이기 */
+    .kakao-ad-modal-container.mobile-modal-ad {
+        display: flex;
+        /* .kakao-ad-modal-container의 display 속성 */
     }
 
-    .sub-tabs .tab {
-        flex-shrink: 0;
-        padding: 6px 10px;
-        /* 모바일 서브탭 패딩 */
-        font-size: var(--text-xs);
-        /* 모바일 서브탭 글꼴 크기 */
-        margin: 0 2px;
+    /* 모바일 광고 컨테이너의 최소 높이 조정 */
+    .kakao-ad-modal-container {
+        min-height: 50px;
+        /* 모바일 배너 높이 기준으로 공간 확보 (320x50) */
+        margin: var(--space-sm) auto;
+        /* 모바일 마진 조정 */
     }
 }
